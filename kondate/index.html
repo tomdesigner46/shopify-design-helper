@@ -26,6 +26,8 @@
   --gold-wash: #faf6ee;
   --red: #c82014;
   --sat: #2b6cb0;
+  --g-red: #d4493f; --g-yellow: #d99a1e; --g-green: #2f8f57; /* 3色食品群（検証済み） */
+  --ok: #2f7d4f; --warn: #a65f00; --track: #e9e6df;
   --shadow-card: 0 0 .5px rgba(0,0,0,.14), 0 1px 1px rgba(0,0,0,.24);
   --shadow-frap: 0 0 6px rgba(0,0,0,.24), 0 8px 12px rgba(0,0,0,.14);
   --f-body: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
@@ -38,7 +40,7 @@
     --ink: rgba(255,255,255,.9); --ink-soft: rgba(255,255,255,.62); --line: rgba(255,255,255,.1);
     --brand: #6cc59c; --accent: #1f8a5c; --accent-text: #6cc59c; --on-accent: #ffffff;
     --house: #0c1512; --uplift: #24453c; --on-house: #ffffff; --on-house-soft: rgba(255,255,255,.66);
-    --mint: #1f3a30; --gold: #d9b56e; --gold-line: #b8954f; --gold-wash: #26241a; --red: #ff7b6e; --sat: #7fb2e5;
+    --mint: #1f3a30; --gold: #d9b56e; --gold-line: #b8954f; --gold-wash: #26241a; --red: #ff7b6e; --sat: #7fb2e5; --g-red: #cc3d3a; --g-yellow: #b48e1c; --g-green: #2a9b8a; --ok: #6cc59c; --warn: #f0a94a; --track: #2a3631;
     --shadow-card: 0 0 0 1px rgba(255,255,255,.06); --shadow-frap: 0 0 6px rgba(0,0,0,.5), 0 8px 12px rgba(0,0,0,.4);
     color-scheme: dark;
   }
@@ -48,7 +50,7 @@
   --ink: rgba(255,255,255,.9); --ink-soft: rgba(255,255,255,.62); --line: rgba(255,255,255,.1);
   --brand: #6cc59c; --accent: #1f8a5c; --accent-text: #6cc59c; --on-accent: #ffffff;
   --house: #0c1512; --uplift: #24453c; --on-house: #ffffff; --on-house-soft: rgba(255,255,255,.66);
-  --mint: #1f3a30; --gold: #d9b56e; --gold-line: #b8954f; --gold-wash: #26241a; --red: #ff7b6e; --sat: #7fb2e5;
+  --mint: #1f3a30; --gold: #d9b56e; --gold-line: #b8954f; --gold-wash: #26241a; --red: #ff7b6e; --sat: #7fb2e5; --g-red: #cc3d3a; --g-yellow: #b48e1c; --g-green: #2a9b8a; --ok: #6cc59c; --warn: #f0a94a; --track: #2a3631;
   --shadow-card: 0 0 0 1px rgba(255,255,255,.06); --shadow-frap: 0 0 6px rgba(0,0,0,.5), 0 8px 12px rgba(0,0,0,.4);
   color-scheme: dark;
 }
@@ -102,7 +104,7 @@ main > .wrap { display: grid; gap: 12px; }
 
 /* Week list */
 .days { display: grid; gap: 0; }
-.day { display: grid; grid-template-columns: 52px 1fr 16px; gap: 12px; align-items: center; padding: 14px; cursor: pointer; text-align: left; width: 100%; border: 0; background: var(--card); border-radius: 12px; box-shadow: var(--shadow-card); transition: transform .2s ease; }
+.day { display: grid; grid-template-columns: 52px 1fr 76px; gap: 12px; align-items: center; padding: 14px; cursor: pointer; text-align: left; width: 100%; border: 0; background: var(--card); border-radius: 12px; box-shadow: var(--shadow-card); transition: transform .2s ease; }
 .day:active { transform: scale(.98); }
 .day.today { box-shadow: 0 0 0 2px var(--accent); }
 .dnum { display: grid; justify-items: center; line-height: 1.1; }
@@ -236,6 +238,36 @@ textarea.inp { min-height: 96px; resize: vertical; line-height: 1.6; }
 .rep { display: inline-block; margin-right: 3px; font-weight: 700; color: var(--brand); }
 .dows { display: none; }
 #ev-form:has(#rp-week:checked) .dows { display: block; }
+.thumb { width: 76px; align-self: center; }
+.thumb svg { display: block; width: 100%; height: auto; }
+.art { padding: 12px 12px 6px; display: grid; gap: 4px; }
+.art svg { display: block; width: 100%; height: auto; }
+.art figcaption { font-size: 11.5px; color: var(--ink-soft); text-align: right; }
+.nutri { padding: 14px 16px; display: grid; gap: 12px; }
+.meter { display: grid; grid-template-columns: 76px 1fr 112px; gap: 10px; align-items: center; font-size: 13px; }
+.meter .lbl { font-weight: 700; }
+.meter .bar { position: relative; height: 10px; border-radius: 6px; background: var(--track); }
+.meter .bar span { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 6px; background: var(--accent); }
+.meter .bar span.over { background: var(--warn); }
+.meter .bar i { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--ink); border-radius: 1px; }
+.meter .val { font-family: var(--f-num); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.meter .val small { display: block; font-family: var(--f-body); font-size: 11px; color: var(--ink-soft); }
+.st { font-size: 11px; font-weight: 700; margin-left: 4px; }
+.st.ok { color: var(--ok); } .st.warn { color: var(--warn); }
+.groups { display: grid; gap: 8px; }
+.grow { display: grid; grid-template-columns: 116px 1fr; gap: 10px; align-items: center; font-size: 13px; }
+.gtag { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
+.gtag::before { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--c); }
+.gitems { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.gitems span { font-size: 12px; border-radius: 50px; padding: 2px 8px; border: 1.5px solid var(--c); }
+.gitems .none { border-style: dashed; color: var(--ink-soft); }
+.wk-chart { padding: 14px 16px; display: grid; gap: 10px; }
+.wk-chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.wk-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.wk-stats div { background: var(--ceramic); border-radius: 8px; padding: 8px 10px; display: grid; }
+.wk-stats b { font-family: var(--f-num); font-size: 20px; font-weight: 800; color: var(--brand); line-height: 1.2; }
+.wk-stats span { font-size: 11.5px; color: var(--ink-soft); }
+.tip-pop { position: fixed; z-index: 60; background: var(--house); color: var(--on-house); font-size: 12px; padding: 6px 10px; border-radius: 8px; pointer-events: none; box-shadow: var(--shadow-frap); white-space: nowrap; }
 .chip.lunch { background: var(--ceramic); color: var(--ink); }
 .chip.lunch b { color: var(--brand); font-weight: 700; margin-right: 3px; }
 .lunch-card { padding: 16px; display: grid; gap: 12px; }
@@ -476,6 +508,148 @@ function renderView() {
   v.innerHTML = ({ week: viewWeek, sched: viewSched, shop: viewShop, family: viewFamily })[S.tab]();
 }
 
+/* ---------- 献立のイメージ図 ---------- */
+function rng(seed) { let h = 2166136261; for (const ch of String(seed)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return () => ((h = Math.imul(h ^ (h >>> 15), 2246822507) ^ Math.imul(h ^ (h >>> 13), 3266489909)) >>> 0) / 4294967296; }
+function foodLook(x) {
+  const t = (x?.name || '') + ' ' + (x?.ing || []).map(i => i.n).join(' ');
+  const has = re => re.test(t);
+  let base = '#d9b98a', sauce = null;
+  if (has(/カレー/)) base = '#b8792b';
+  else if (has(/鮭|サーモン|ちゃんちゃん/)) base = '#ef8f6a';
+  else if (has(/さば|鯖|ぶり|魚|たら|さんま|あじ/)) base = '#a28d77';
+  else if (has(/ハンバーグ|ひき肉|ミート|そぼろ/)) { base = '#7b4a30'; sauce = '#4f2516'; }
+  else if (has(/お好み焼き/)) { base = '#d39a55'; sauce = '#5a2c18'; }
+  else if (has(/肉じゃが|じゃがいも|ポテト/)) base = '#e2c27a';
+  else if (has(/豚|牛/)) base = '#b07a52';
+  else if (has(/鶏|チキン|から揚げ|唐揚げ/)) base = '#e4b36f';
+  else if (has(/しりしり|にんじん/)) base = '#ec8a3a';
+  else if (has(/もやし/)) base = '#efe6c8';
+  else if (has(/トマト/) && x.role !== '汁物') base = '#d9573f';
+  else if (has(/小松菜|ほうれん草|ブロッコリー|きゅうり|ピーマン|キャベツ|レタス|サラダ|おひたし|ナムル|和え/)) base = '#6aa84f';
+  else if (has(/卵|たまご/)) base = '#f1c94a';
+  if (x.role === '汁物') {
+    base = has(/みそ|味噌/) ? '#c79a5d' : has(/トマト/) ? '#d9774f' : has(/コーン|ポタージュ|牛乳/) ? '#f0d579' : has(/すまし/) ? '#e6d29a' : '#e5c27a';
+  }
+  const gar = [];
+  if (has(/ねぎ|小松菜|わかめ|ピーマン|きゅうり|ブロッコリー|ほうれん草|青のり/)) gar.push('#3f7f35');
+  if (has(/にんじん|トマト|パプリカ/)) gar.push('#e8742f');
+  if (has(/豆腐|ご飯|ポテト|もやし|マヨ/)) gar.push('#fbf7ea');
+  if (has(/卵|コーン/)) gar.push('#f6cf3c');
+  if (has(/しめじ|えのき|しいたけ|きのこ/)) gar.push('#d8c3a0');
+  return { base, sauce, gar };
+}
+function blob(cx, cy, rx, ry, look, r) {
+  let o = `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${look.base}"/>`;
+  for (let k = 0; k < 7; k++) { const a = r() * 6.28, d = r() * .55; o += `<ellipse cx="${(cx + Math.cos(a) * rx * d).toFixed(1)}" cy="${(cy + Math.sin(a) * ry * d).toFixed(1)}" rx="${(rx * (.35 + r() * .3)).toFixed(1)}" ry="${(ry * (.35 + r() * .3)).toFixed(1)}" fill="${look.base}" opacity=".9"/>`; }
+  if (look.sauce) o += `<ellipse cx="${cx}" cy="${cy - ry * .1}" rx="${rx * .55}" ry="${ry * .45}" fill="${look.sauce}" opacity=".85"/>`;
+  for (let k = 0; k < 14 && look.gar.length; k++) { const a = r() * 6.28, d = Math.sqrt(r()) * .75; o += `<circle cx="${(cx + Math.cos(a) * rx * d).toFixed(1)}" cy="${(cy + Math.sin(a) * ry * d).toFixed(1)}" r="${(1.6 + r() * 2.2).toFixed(1)}" fill="${look.gar[k % look.gar.length]}"/>`; }
+  o += `<ellipse cx="${cx - rx * .3}" cy="${cy - ry * .35}" rx="${rx * .25}" ry="${ry * .12}" fill="#fff" opacity=".18"/>`;
+  return o;
+}
+function trayArt(day) {
+  const ds = day?.dishes || [];
+  const pick = role => ds.find(x => x.role === role);
+  const main = pick('主菜') || ds[0], side = ds.find(x => x.role === '副菜' && x !== main) || ds.find(x => x !== main && x.role !== '汁物'), soup = pick('汁物');
+  const r = rng(day?.date + (main?.name || ''));
+  let g = `<rect x="4" y="4" width="312" height="196" rx="16" fill="#b8844f"/><rect x="10" y="10" width="300" height="184" rx="12" fill="#c99560"/>`;
+  for (let k = 0; k < 6; k++) { const y = 22 + k * 30 + r() * 8; g += `<path d="M14 ${y.toFixed(1)} C 100 ${(y - 6).toFixed(1)}, 210 ${(y + 7).toFixed(1)}, 306 ${(y - 2).toFixed(1)}" stroke="#b07f4c" stroke-width="1.4" fill="none" opacity=".55"/>`; }
+  // 主菜: 大皿
+  g += `<ellipse cx="128" cy="72" rx="96" ry="52" fill="#000" opacity=".12"/><ellipse cx="126" cy="68" rx="96" ry="52" fill="#f4f0e6"/><ellipse cx="126" cy="68" rx="80" ry="42" fill="#ebe5d6"/>`;
+  if (main) g += blob(126, 68, 60, 30, foodLook(main), r);
+  // 副菜: 小鉢
+  g += `<circle cx="262" cy="66" r="40" fill="#000" opacity=".12"/><circle cx="260" cy="63" r="40" fill="#2f4a68"/><circle cx="260" cy="63" r="32" fill="#e9e2d2"/>`;
+  if (side) g += blob(260, 63, 24, 20, foodLook(side), r);
+  // ごはん
+  g += `<circle cx="78" cy="152" r="38" fill="#000" opacity=".12"/><circle cx="76" cy="149" r="38" fill="#f6f2e8"/><circle cx="76" cy="149" r="30" fill="#fffdf7"/>`;
+  for (let k = 0; k < 22; k++) { const a = r() * 6.28, d = Math.sqrt(r()) * 24; g += `<ellipse cx="${(76 + Math.cos(a) * d).toFixed(1)}" cy="${(149 + Math.sin(a) * d).toFixed(1)}" rx="3" ry="1.6" transform="rotate(${(r() * 180).toFixed(0)} ${(76 + Math.cos(a) * d).toFixed(1)} ${(149 + Math.sin(a) * d).toFixed(1)})" fill="#ece6d6"/>`; }
+  // 汁物: 汁椀
+  g += `<circle cx="236" cy="154" r="38" fill="#000" opacity=".12"/><circle cx="234" cy="151" r="38" fill="#5e1c18"/><circle cx="234" cy="151" r="31" fill="#3e110e"/>`;
+  if (soup) { const lk = foodLook(soup); g += `<circle cx="234" cy="151" r="28" fill="${lk.base}"/>`; for (let k = 0; k < 10 && lk.gar.length; k++) { const a = r() * 6.28, d = Math.sqrt(r()) * 20; g += `<circle cx="${(234 + Math.cos(a) * d).toFixed(1)}" cy="${(151 + Math.sin(a) * d).toFixed(1)}" r="${(2 + r() * 2.5).toFixed(1)}" fill="${lk.gar[k % lk.gar.length]}"/>`; } }
+  // 箸
+  g += `<rect x="128" y="186" width="70" height="4" rx="2" fill="#3b2a1e" transform="rotate(-8 128 186)"/><rect x="132" y="192" width="70" height="4" rx="2" fill="#3b2a1e" transform="rotate(-8 132 192)"/>`;
+  return `<svg viewBox="0 0 320 204" role="img" aria-label="${esc(ds.map(x => x.name).join('、'))}のイメージ図">${g}</svg>`;
+}
+
+/* ---------- 栄養 ---------- */
+const NUT = [
+  { k: 'kcal', l: 'エネルギー', u: 'kcal', t: 700, lo: 550, hi: 850, txt: '550〜850kcal' },
+  { k: 'protein', l: 'たんぱく質', u: 'g', t: 25, min: true },
+  { k: 'veg', l: '野菜', u: 'g', t: 120, min: true },
+  { k: 'fat', l: '脂質', u: 'g', t: 30, max: true },
+  { k: 'salt', l: '塩分', u: 'g', t: 2.5, max: true },
+];
+function nutStatus(n, v) {
+  if (v == null || v === '') return null;
+  if (n.min) return v >= n.t ? ['ok', '✓ 十分'] : ['warn', '△ 少なめ'];
+  if (n.max) return v <= n.t ? ['ok', '✓ 目安内'] : ['warn', '! 多め'];
+  if (n.hi && v > n.hi) return ['warn', '! 多め'];
+  if (n.lo && v < n.lo) return ['warn', '△ 少なめ'];
+  return ['ok', '✓ 目安内'];
+}
+function groupsOf(day) {
+  const g = { red: new Set(), yellow: new Set(['ごはん']), green: new Set() };
+  (day?.dishes || []).forEach(x => (x.ing || []).forEach(i => {
+    const n = String(i.n || '').replace(/（.*?）|\(.*?\)/g, ''); if (!n || i.c === '調味料') return;
+    if (/いも|じゃが|さつま|かぼちゃ|コーン|パン粉|薄力粉|小麦粉|天かす|パスタ|うどん|麺|パン|米|バター/.test(n)) g.yellow.add(n);
+    else if (/わかめ|ひじき|のり|昆布|しめじ|えのき|しいたけ|きのこ/.test(n)) g.green.add(n);
+    else if (i.c === '肉・魚' || i.c === '卵・豆腐・乳' || /豆|ツナ|ハム/.test(n)) g.red.add(n);
+    else if (i.c === '主食・乾物') g.yellow.add(n);
+    else if (i.c === '野菜・果物') g.green.add(n);
+  }));
+  return g;
+}
+function groupsCard(day) {
+  const g = groupsOf(day);
+  const rows = [['red', '赤', '体をつくる'], ['yellow', '黄', '力になる'], ['green', '緑', '調子を整える']];
+  const all = rows.every(([k]) => g[k].size);
+  return `<div class="sec-title"><span>3色の食品バランス</span>${all ? '<span class="chip gold">3色そろってる</span>' : '<span class="st warn">△ 足りない色あり</span>'}</div>
+  <div class="card nutri groups">${rows.map(([k, c, d]) => `<div class="grow" style="--c:var(--g-${k})"><span class="gtag">${c}<small class="muted" style="font-weight:500">${d}</small></span>
+    <span class="gitems">${g[k].size ? [...g[k]].map(n => `<span>${esc(n)}</span>`).join('') : '<span class="none">なし</span>'}</span></div>`).join('')}
+    <p class="hint">赤=肉・魚・卵・豆　黄=ごはん・いも・油　緑=野菜・きのこ・海藻。ごはんは毎食ある前提です。</p></div>`;
+}
+function nutriCard(day) {
+  const nu = day?.nutri;
+  if (!nu) return `<div class="sec-title"><span>栄養の目安</span></div><div class="card nutri"><p class="hint">この日の栄養はまだ計算していません。</p><button class="btn small ghost" data-act="nutri-calc" ${S.sample ? '' : 'disabled'}>${ICON.spark}AIで栄養を計算</button></div>`;
+  return `<div class="sec-title"><span>栄養の目安（大人1人分）</span></div><div class="card nutri">
+  ${NUT.map(n => { const v = Number(nu[n.k]); if (!isFinite(v)) return ''; const scale = Math.max(n.hi || n.t, v, n.t) * 1.3; const st = nutStatus(n, v);
+    return `<div class="meter"><span class="lbl">${n.l}</span><span class="bar" role="img" aria-label="${n.l} ${v}${n.u}、目安${n.t}${n.u}"><span class="${st[0] === 'warn' ? 'over' : ''}" style="width:${Math.min(100, v / scale * 100)}%"></span><i style="left:${n.t / scale * 100}%"></i></span>
+    <span class="val">${v}${n.u}<span class="st ${st[0]}">${st[1]}</span><small>目安 ${n.txt || n.t + n.u + (n.min ? '以上' : n.max ? '以下' : '')}</small></span></div>`; }).join('')}
+  <p class="hint">${day.sample ? 'サンプルの推定値' : 'AIによる推定値'}。ご飯150gを含む夕食1食分で、縦線が目安（1日の約1/3）です。${S.family.members.some(m => m.kind === '子ども') ? '子どもは年齢に応じて大人の5〜8割が目安です。' : ''}</p>
+  ${nu.note ? `<p style="font-size:13.5px">${esc(nu.note)}</p>` : ''}</div>`;
+}
+function weekNutri(dates) {
+  const days = dates.map(d => S.days[d]);
+  if (!days.some(d => d?.dishes?.length)) return '';
+  const W = 320, H = 132, top = 18, bottom = 22, ch = H - top - bottom, bw = 28;
+  const vals = days.map(d => Number(d?.nutri?.veg) || 0);
+  const maxV = Math.max(180, ...vals) * 1.1;
+  const y = v => top + ch - v / maxV * ch;
+  const step = W / 7;
+  let svg = `<line x1="0" x2="${W}" y1="${y(0)}" y2="${y(0)}" stroke="var(--line)" stroke-width="1"/>`;
+  svg += `<line x1="0" x2="${W}" y1="${y(120)}" y2="${y(120)}" stroke="var(--ink-soft)" stroke-width="1" stroke-dasharray="3 3"/>`;
+  dates.forEach((date, i) => {
+    const v = vals[i], cx = step * i + step / 2, has = days[i]?.nutri?.veg != null;
+    if (has) {
+      const h = Math.max(4, y(0) - y(v));
+      svg += `<path d="M${cx - bw / 2} ${y(0)} V${y(0) - h + 4} Q${cx - bw / 2} ${y(0) - h} ${cx - bw / 2 + 4} ${y(0) - h} H${cx + bw / 2 - 4} Q${cx + bw / 2} ${y(0) - h} ${cx + bw / 2} ${y(0) - h + 4} V${y(0)} Z" fill="${v >= 120 ? 'var(--accent)' : 'var(--warn)'}"/>`;
+      svg += `<text x="${cx}" y="${y(0) - h - 4}" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--ink)" font-family="Manrope, sans-serif">${v}</text>`;
+    } else svg += `<text x="${cx}" y="${y(0) - 6}" text-anchor="middle" font-size="11" fill="var(--ink-soft)">–</text>`;
+    svg += `<text x="${cx}" y="${H - 6}" text-anchor="middle" font-size="11" fill="var(--ink-soft)">${dowOf(date)}</text>`;
+    svg += `<rect x="${cx - step / 2}" y="0" width="${step}" height="${H}" fill="transparent" data-act="open" data-date="${date}" data-tip="${esc(md(date) + '（' + dowOf(date) + '） ' + (has ? NUT.map(n => n.l + ' ' + (days[i].nutri[n.k] ?? '–') + n.u).join(' / ') : '栄養は未計算'))}" style="cursor:pointer"/>`;
+  });
+  const filled = days.filter(d => d?.dishes?.length);
+  const tri = filled.filter(d => { const g = groupsOf(d); return g.red.size && g.yellow.size && g.green.size; }).length;
+  const fish = filled.filter(d => (d.dishes || []).some(x => x.role === '主菜' && /鮭|さば|鯖|魚|ぶり|たら|さんま|あじ|いわし|えび|いか|まぐろ|かじき/.test(x.name + (x.ing || []).map(i => i.n).join('')))).length;
+  const saltOk = days.filter(d => d?.nutri?.salt != null && d.nutri.salt <= 2.5).length, saltN = days.filter(d => d?.nutri?.salt != null).length;
+  const missing = dates.filter(d => S.days[d]?.dishes?.length && !S.days[d].nutri).length;
+  return `<div class="card wk-chart"><div class="sec-title"><span>今週の栄養バランス</span></div>
+    <div class="wk-stats"><div><b class="num">${tri}<small style="font-size:12px">/${filled.length}日</small></b><span>3色そろった日</span></div><div><b class="num">${fish}<small style="font-size:12px">回</small></b><span>魚の主菜（目安2回〜）</span></div><div><b class="num">${saltOk}<small style="font-size:12px">/${saltN}日</small></b><span>塩分が目安内</span></div></div>
+    <p class="hint" style="margin-top:2px">野菜の量（大人1人分 g）。点線が目安の120g、棒をタップでその日へ</p>
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="曜日ごとの野菜の量">${svg}</svg>
+    ${missing ? `<button class="btn small ghost" data-act="nutri-week" ${S.sample ? '' : 'disabled'}>${ICON.spark}${missing}日分の栄養をAIで計算</button>` : ''}
+  </div>`;
+}
+
 function viewWeek() {
   const dates = weekDates();
   const anySample = dates.some(d => S.days[d]?.sample);
@@ -484,6 +658,7 @@ function viewWeek() {
   if (anySample) h += `<div class="banner"><p><b>サンプル献立です。</b>家族と予定を登録してから「AIで献立」を押すと、わが家向けに作り直せます。</p></div>`;
   if (!S.family.members.length && !anySample) h += `<div class="banner"><p><b>まず家族を登録しましょう。</b>子どもの年齢や好き嫌いを入れると、AIが取り分けや味付けまで考えます。</p><div><button class="btn small ghost" data-act="tab" data-tab="family">家族を登録する</button></div></div>`;
   if (none && S.loaded) h += `<div class="card empty"><h3>この週の献立はまだありません</h3><p>右下の「AIで献立」から7日分をまとめて作れます。前の日に余った食材を次の日の副菜で使い切るように組み立てます。</p><button class="btn" data-act="gen-open">${ICON.spark}7日分をつくる</button></div>`;
+  h += weekNutri(dates);
   h += '<div class="days">';
   dates.forEach((date, i) => {
     const day = S.days[date];
@@ -500,7 +675,7 @@ function viewWeek() {
           <span class="chips">${day.uses?.length ? `<span class="chip gold">残り物 ${day.uses.length}品つかう</span>` : ''}${flowMin(day) ? `<span class="chip min">約${flowMin(day)}分</span>` : ''}</span>`
           : `<span class="dempty">${out ? '夕食なし' : 'まだ決まっていません'}</span>`}
       </span>
-      <span class="chev" aria-hidden="true">›</span>
+      <span class="thumb" aria-hidden="true">${main ? trayArt(day) : ''}</span>
     </button>`;
     if (i < 6 && day?.carry?.length) {
       h += `<div class="chain" aria-label="翌日以降への引き継ぎ"><span class="pills">${day.carry.map(c => `<span class="pill">${esc(c.n)} ${esc(c.q || '')} → ${esc(c.to || '')}</span>`).join('')}</span></div>`;
@@ -598,7 +773,7 @@ function lunchCard(date) {
 }
 function dayAll(day, date) {
   const dishes = day.dishes || [];
-  let h = lunchCard(date) + `<ul class="plain card menu-sum">${dishes.map((x, i) => `<li><span class="role">${esc(x.role)}</span><button data-act="goto-dish" data-i="${i}" class="nm" style="border:0;background:none;padding:0;text-align:left;cursor:pointer;font-weight:700;color:var(--ink)">${esc(x.name)}</button><span class="chip min">${x.min ? x.min + '分' : ''}</span></li>`).join('')}</ul>`;
+  let h = `<figure class="card art" style="margin:0">${trayArt(day)}<figcaption>献立のイメージ図</figcaption></figure>` + lunchCard(date) + `<ul class="plain card menu-sum">${dishes.map((x, i) => `<li><span class="role">${esc(x.role)}</span><button data-act="goto-dish" data-i="${i}" class="nm" style="border:0;background:none;padding:0;text-align:left;cursor:pointer;font-weight:700;color:var(--ink)">${esc(x.name)}</button><span class="chip min">${x.min ? x.min + '分' : ''}</span></li>`).join('')}</ul>`;
   if (day.uses?.length || day.carry?.length) {
     h += `<div class="leftover"><h3>${ICON.loop.replace('<svg', '<svg width="16" height="16"')}食材のつかいまわし</h3>
       ${(day.uses || []).map(u => `<div class="lo-row"><span class="tag">前から</span><span><b>${esc(u.n)}</b> ${esc(u.q || '')} <span class="muted">← ${esc(u.from || '')}</span></span></div>`).join('')}
@@ -624,6 +799,7 @@ function dayAll(day, date) {
   if (kids.length) {
     h += `<div class="sec-title"><span>子どもの分</span></div><div class="card kid">${kids.map(x => `<div><span class="who">${esc(x.name)}</span><p>${esc(x.kid)}</p></div>`).join('')}</div>`;
   }
+  h += groupsCard(day) + nutriCard(day);
   if (day.tip) h += `<div class="card tip"><span style="color:var(--gold)">${ICON.spark.replace('<svg', '<svg width="18" height="18"')}</span><span>${esc(day.tip)}</span></div>`;
   h += `<div class="row-btns"><button class="btn ghost small" data-act="dish-edit" data-i="-1">＋ 料理を追加</button><button class="btn ghost small" data-act="regen-day" ${S.sample ? '' : 'disabled'}>${ICON.spark}この日をAIで作り直す</button><button class="btn danger small" data-act="del-day">この日を空にする</button></div>`;
   h += updatedLine(day);
@@ -739,6 +915,7 @@ function sheetDish(i) {
       const doc = JSON.parse(JSON.stringify(day));
       doc.dishes = doc.dishes || [];
       if (i >= 0) doc.dishes[i] = nd; else { doc.dishes.push(nd); S.dish = doc.dishes.length - 1; }
+      delete doc.nutri;
       saveDay(S.day, doc); closeSheet(); toast('保存しました');
     });
   });
@@ -770,13 +947,16 @@ function eventsText(dates) {
 const JSON_RULES = `c(分類)は「肉・魚」「野菜・果物」「卵・豆腐・乳」「主食・乾物」「調味料」「その他」のいずれか。ご飯（白米）は献立に含めない。`;
 
 function outlinePrompt(dates, req) {
-  return `あなたは日本の家庭料理に詳しい献立プランナーです。${dates[0]}から${dates.length}日分の夕食の献立の骨組みを作ってください。
+  return `あなたは日本の家庭料理に詳しい献立プランナーです。次の${dates.length}日分の夕食の献立の骨組みを作ってください。
+対象日（この順番・この日付と曜日で、daysに${dates.length}件ちょうど返す）: ${dates.map(d => d + '(' + dowOf(d) + ')').join('、')}
+fromやtoの曜日は、上の日付と曜日の対応どおりに書く。usesのfromは必ずその日より前の日、carryのtoは必ずその日より後の日にする。7日間で同じ料理・同じ主菜を繰り返さない。
 
 【最重要：食材の使い回し】
 - 肉・魚・豆腐・野菜はパック単位（鶏むね2枚、豆腐1丁、キャベツ1/2玉など）で買う前提。ある日に使って残った分を、翌日以降の副菜や汁物で使い切る。
 - 例：月曜の主菜で鶏むね肉を使ったら、火曜の副菜で残りの鶏むね肉を使う。
 - 2日目以降は毎日、少なくとも1つ前日以前の残りを使う。週の終わりに中途半端な食材が残らないようにする。
 - usesは「この日に使う残り物」、carryは「この日の買い物のうち翌日以降に残すもの」。両方の食材名・量・日付が対応するようにする。
+【栄養】主食・主菜・副菜・汁物をそろえ、赤（肉・魚・卵・豆）・黄（ごはん・いも・油）・緑（野菜・きのこ・海藻）の3色が毎日そろうようにする。魚の主菜を週2回以上。野菜は大人1人1食120g以上。揚げ物は週1回まで。塩分は控えめ（汁物の日は主菜を薄味に）。
 【その他】
 - 基本は主菜・副菜・汁物の3品。同じ主材料の主菜を2日続けない。肉と魚のバランス。
 - 子どもの年齢・好き嫌いを考える。苦手な食材は控えめに、または食べやすく工夫。アレルギー食材は絶対に使わない。
@@ -807,10 +987,17 @@ ${req ? '【要望】' + req : ''}
 - stepsは1手順1文で4〜6手順。火加減と時間を具体的に。
 - flowは3品を同時に効率よく作る段取り（下ごしらえまとめ・並行作業・煮込み中に別の料理）。各手順にどの料理か(d: "主菜"など)と目安の分(min)。5〜9手順。
 - kidは子どもへの取り分け・味付け・切り方の工夫を1〜2文（登録された子どもの名前と年齢に合わせる。子どもがいなければ空文字）。
+- nutriはご飯150gを含めた大人1人分の推定値（kcal・たんぱく質g・脂質g・炭水化物g・野菜g・食塩相当量g）。目安はエネルギー550〜850kcal、たんぱく質25g以上、野菜120g以上、脂質30g以下、塩分2.5g以下。外れそうなら分量や味付けを調整してから答える。noteは栄養面のひとこと（30字以内）。
 - ${JSON_RULES}
 
 JSONのみで答える:
-{"theme":"…","dishes":[{"role":"主菜","name":"…","min":20,"ing":[{"n":"鶏むね肉","q":"1枚(250g)","c":"肉・魚"}],"steps":["…"],"kid":"…"}],"flow":[{"t":"…","d":"主菜","min":5}],"uses":[{"n":"…","q":"…","from":"…"}],"carry":[{"n":"…","q":"…","to":"…"}],"tip":"節約・使い切りのひとこと(40字以内)"}`;
+{"theme":"…","dishes":[{"role":"主菜","name":"…","min":20,"ing":[{"n":"鶏むね肉","q":"1枚(250g)","c":"肉・魚"}],"steps":["…"],"kid":"…"}],"flow":[{"t":"…","d":"主菜","min":5}],"uses":[{"n":"…","q":"…","from":"…"}],"carry":[{"n":"…","q":"…","to":"…"}],"nutri":{"kcal":680,"protein":28,"fat":20,"carb":95,"veg":140,"salt":2.4,"note":"…"},"tip":"節約・使い切りのひとこと(40字以内)"}`;
+}
+function cleanNutri(n) {
+  if (!n || typeof n !== 'object') return null;
+  const o = {}; ['kcal', 'protein', 'fat', 'carb', 'veg', 'salt'].forEach(k => { const v = Number(n[k]); if (isFinite(v) && v >= 0) o[k] = Math.round(v * 10) / 10; });
+  if (n.note) o.note = String(n.note).slice(0, 60);
+  return Object.keys(o).length >= 3 ? o : null;
 }
 function cleanDay(date, r, o) {
   const dishes = (Array.isArray(r?.dishes) ? r.dishes : []).map(x => ({
@@ -824,6 +1011,7 @@ function cleanDay(date, r, o) {
     flow: (Array.isArray(r?.flow) ? r.flow : []).map(f => ({ t: String(f.t || ''), d: String(f.d || ''), min: Number(f.min) || '' })).filter(f => f.t),
     uses: arr(o?.uses?.length ? o.uses : r?.uses, 'from'), carry: arr(o?.carry?.length ? o.carry : r?.carry, 'to'),
     tip: String(r?.tip || ''),
+    ...(cleanNutri(r?.nutri) ? { nutri: cleanNutri(r.nutri) } : {}),
   };
 }
 function aiError(e) {
@@ -867,16 +1055,20 @@ async function runWeek(req) {
     S.gen[0].st = 'ok';
   } catch (e) { S.gen[0].st = 'ng'; renderProg(); toast(aiError(e)); S.gen = null; if (form) form.hidden = false; return; }
   renderProg();
-  const byDate = Object.fromEntries(outline.days.map(d => [d.date, d]));
+  // 日付がずれて返ってきても同じ骨組みを2日に使わないよう、日付が全部そろっているときだけ日付で、それ以外は順番で対応させる
+  const od = outline.days.filter(x => x && typeof x === 'object');
+  const exact = dates.every(d => od.filter(x => x.date === d).length === 1);
+  const byDate = exact ? Object.fromEntries(od.map(x => [x.date, x])) : Object.fromEntries(dates.map((d, i) => [d, od[i]]));
+  const mains = dates.map(d => (byDate[d]?.dishes || []).map(x => x.name).join('・')).map((m, i) => m ? `${dowOf(dates[i])}: ${m}` : '').filter(Boolean).join(' / ');
   let ok = 0;
-  const queue = dates.map((d, i) => ({ d, i, o: byDate[d] || outline.days[i] }));
+  const queue = dates.map((d, i) => ({ d, i, o: byDate[d] ? { ...byDate[d], date: d } : null }));
   const worker = async () => {
     while (queue.length) {
       const { d, i, o } = queue.shift();
       if (o && Array.isArray(o.dishes) && !o.dishes.length) { S.gen[i + 1].st = 'ok'; S.gen[i + 1].label += '（夕食なし）'; renderProg(); deleteDay(d); continue; }
       S.gen[i + 1].st = 'run'; renderProg();
       try {
-        const r = await S.sample.json(detailPrompt(d, o, '', '', req), { modelTier: 'default' });
+        const r = await S.sample.json(detailPrompt(d, o, '', '', (req ? req + '\n' : '') + '（この週のほかの日の献立: ' + mains + '。これらと同じ料理にしない）'), { modelTier: 'default' });
         await saveDay(d, cleanDay(d, r, o)); S.gen[i + 1].st = 'ok'; ok++;
       } catch (e) { S.gen[i + 1].st = 'ng'; if (e?.code === 'rate_limited' || e?.code === 'not_granted') { toast(aiError(e)); queue.length = 0; } }
       renderProg();
@@ -925,14 +1117,16 @@ function sheetSwap(i) {
 ${lefts ? '必ず使う残り物: ' + lefts : ''}
 ${familyText()}
 ${req ? '【要望】' + req : ''}
-ほかの料理と味や食材がかぶらないようにする。新しい料理を含めた3品の段取り(flow)も作り直す。${JSON_RULES}
-JSONのみ: {"dish":{"role":"${x.role}","name":"…","min":15,"ing":[{"n":"…","q":"…","c":"…","left":"(残り物なら)"}],"steps":["…"],"kid":"…"},"flow":[{"t":"…","d":"主菜","min":5}]}`;
+ほかの料理と味や食材がかぶらないようにし、3品で栄養のバランス（野菜120g以上、塩分2.5g以下、赤・黄・緑の3色）が取れるようにする。新しい料理を含めた3品の段取り(flow)と、ご飯150gを含む大人1人分の栄養推定(nutri)も作り直す。${JSON_RULES}
+ほかの料理の材料: ${day.dishes.filter((_, j) => j !== i).map(y => (y.ing || []).map(r => r.n + ' ' + r.q).join('、')).join(' / ')}
+JSONのみ: {"dish":{"role":"${x.role}","name":"…","min":15,"ing":[{"n":"…","q":"…","c":"…","left":"(残り物なら)"}],"steps":["…"],"kid":"…"},"flow":[{"t":"…","d":"主菜","min":5}],"nutri":{"kcal":680,"protein":28,"fat":20,"carb":95,"veg":140,"salt":2.4,"note":"…"}}`;
       try {
         const r = await S.sample.json(p, { modelTier: 'default' });
         const c = cleanDay(S.day, { dishes: [r.dish], flow: r.flow }, null);
         if (!c.dishes.length) throw { code: 'invalid_json' };
         const doc = JSON.parse(JSON.stringify(S.days[S.day]));
         doc.dishes[i] = c.dishes[0]; if (c.flow.length) doc.flow = c.flow;
+        const nn = cleanNutri(r.nutri); if (nn) doc.nutri = nn; else delete doc.nutri;
         await saveDay(S.day, doc); toast('「' + c.dishes[0].name + '」に替えました');
       } catch (err) { toast(aiError(err)); }
     });
@@ -1076,6 +1270,31 @@ async function saveImport() {
   IMP.rows = null; IMP.files = [];
 }
 
+/* ---------- 栄養の計算 ---------- */
+async function calcNutri(dates) {
+  if (!S.sample) return;
+  const list = dates.filter(d => S.days[d]?.dishes?.length);
+  if (!list.length) return;
+  toast(`AIが${list.length}日分の栄養を計算しています…`);
+  const text = list.map(d => `## ${d}\n` + S.days[d].dishes.map(x => `${x.role}「${x.name}」${servingsLabel()}: ` + (x.ing || []).map(i => i.n + ' ' + i.q).join('、')).join('\n')).join('\n\n');
+  try {
+    const r = await S.sample.json(`次の夕食献立（日本の家庭料理）について、ご飯150gを含めた大人1人分の栄養を推定してください。材料は${servingsLabel()}の分量なので人数で割って計算する。
+目安: エネルギー550〜850kcal、たんぱく質25g以上、野菜120g以上、脂質30g以下、塩分2.5g以下。noteは目安と比べたひとこと（30字以内、例:「塩分が多め。みそ汁を薄めに」）。
+
+${text}
+
+JSONのみ: {"days":[{"date":"YYYY-MM-DD","kcal":680,"protein":28,"fat":20,"carb":95,"veg":140,"salt":2.4,"note":"…"}]}`, { modelTier: 'quick' });
+    let n = 0;
+    for (const x of (Array.isArray(r?.days) ? r.days : [])) {
+      const nn = cleanNutri(x); if (!nn || !S.days[x.date]) continue;
+      const doc = JSON.parse(JSON.stringify(S.days[x.date])); doc.nutri = nn; const wasSample = doc.sample;
+      if (wasSample) { doc.updatedAt = Date.now(); S.days[x.date] = doc; await put('days/' + x.date, doc); } else await saveDay(x.date, doc);
+      n++;
+    }
+    render(); toast(n ? `${n}日分の栄養を計算しました` : '栄養を計算できませんでした。もう一度お試しください');
+  } catch (e) { toast(aiError(e)); }
+}
+
 /* ---------- events ---------- */
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-act]'); if (!t) return;
@@ -1113,6 +1332,8 @@ document.addEventListener('click', e => {
     case 'mem-edit': sheetMember(t.dataset.id); break;
     case 'mem-del': S.family.members = S.family.members.filter(m => m.id !== t.dataset.id); saveFamily(); closeSheet(); break;
     case 'copy-shop': copyShop(); break;
+    case 'nutri-calc': calcNutri([S.day]); break;
+    case 'nutri-week': calcNutri(weekDates().filter(d => !S.days[d]?.nutri)); break;
     case 'imp-open': if (IMP.rows && t.closest('#imp-save')) IMP.rows = null; sheetImport(); break;
     case 'imp-row-del': { const f = document.getElementById('imp-save'); if (f) { const fd = new FormData(f); IMP.rows.forEach((r, i) => r.menu = String(fd.get('m' + i) || '').trim()); } IMP.rows.splice(+t.dataset.i, 1); renderImport(); break; }
     case 'imp-del': { const id = t.dataset.id, d = S.kidmenus[id]; openSheet(`<h3>${esc(memberName(d?.who) || '子ども')}の${esc(monthLabel(d?.month))}の${esc(d?.source || '給食')}を消しますか？</h3><button class="btn danger block" data-act="imp-del-ok" data-id="${esc(id)}">消す</button><button class="btn ghost block" data-act="sheet-close">やめる</button>`); break; }
@@ -1131,6 +1352,13 @@ document.addEventListener('submit', e => {
   saveFamily(); toast('方針を保存しました');
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (document.getElementById('sheet-root').innerHTML && !S.gen) closeSheet(); else if (S.day) { S.day = null; render(); } } });
+document.addEventListener('pointerover', e => {
+  const t = e.target.closest?.('[data-tip]'); document.querySelector('.tip-pop')?.remove();
+  if (!t || e.pointerType !== 'mouse') return;
+  const r = t.getBoundingClientRect(), d = document.createElement('div'); d.className = 'tip-pop'; d.textContent = t.dataset.tip;
+  document.body.appendChild(d); const w = d.offsetWidth;
+  d.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + 'px'; d.style.top = (r.top - 34) + 'px';
+});
 function copyShop() {
   const list = shoppingList(); const checks = S.checks[S.week] || {};
   const txt = `買い物リスト ${md(S.week)}〜${md(addDays(S.week, 6))}\n` + CATS.filter(c => c !== '調味料').map(cat => {
