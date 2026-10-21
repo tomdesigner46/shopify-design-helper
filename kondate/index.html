@@ -1,0 +1,931 @@
+<title>うちの献立帳</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Klee+One:wght@600&display=swap">
+<style>
+/* Layout: スマホ1カラム。濃緑の帯ヘッダー → クリーム地に白カード → 下部タブ。AIボタンは右下に浮かせる (DESIGN.md: Starbucks) */
+:root {
+  --canvas: #f2f0eb;      /* Neutral Warm */
+  --ceramic: #edebe9;
+  --card: #ffffff;
+  --ink: rgba(0,0,0,.87);
+  --ink-soft: rgba(0,0,0,.58);
+  --line: rgba(0,0,0,.08);
+  --brand: #006241;       /* 見出し */
+  --accent: #00754a;      /* CTA */
+  --accent-text: #00754a; /* 緑の文字・枠 */
+  --on-accent: #ffffff;
+  --house: #1e3932;       /* 帯 */
+  --uplift: #2b5148;
+  --on-house: #ffffff;
+  --on-house-soft: rgba(255,255,255,.7);
+  --mint: #d4e9e2;
+  --gold: #a8853f;        /* 使い切り = ごほうび */
+  --gold-line: #cba258;
+  --gold-wash: #faf6ee;
+  --red: #c82014;
+  --sat: #2b6cb0;
+  --shadow-card: 0 0 .5px rgba(0,0,0,.14), 0 1px 1px rgba(0,0,0,.24);
+  --shadow-frap: 0 0 6px rgba(0,0,0,.24), 0 8px 12px rgba(0,0,0,.14);
+  --f-body: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+  --f-num: "Manrope", "Zen Kaku Gothic New", system-ui, sans-serif;
+  --f-hand: "Klee One", "Hiragino Maru Gothic ProN", cursive;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --canvas: #111a17; --ceramic: #17221e; --card: #1b2622;
+    --ink: rgba(255,255,255,.9); --ink-soft: rgba(255,255,255,.62); --line: rgba(255,255,255,.1);
+    --brand: #6cc59c; --accent: #1f8a5c; --accent-text: #6cc59c; --on-accent: #ffffff;
+    --house: #0c1512; --uplift: #24453c; --on-house: #ffffff; --on-house-soft: rgba(255,255,255,.66);
+    --mint: #1f3a30; --gold: #d9b56e; --gold-line: #b8954f; --gold-wash: #26241a; --red: #ff7b6e; --sat: #7fb2e5;
+    --shadow-card: 0 0 0 1px rgba(255,255,255,.06); --shadow-frap: 0 0 6px rgba(0,0,0,.5), 0 8px 12px rgba(0,0,0,.4);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --canvas: #111a17; --ceramic: #17221e; --card: #1b2622;
+  --ink: rgba(255,255,255,.9); --ink-soft: rgba(255,255,255,.62); --line: rgba(255,255,255,.1);
+  --brand: #6cc59c; --accent: #1f8a5c; --accent-text: #6cc59c; --on-accent: #ffffff;
+  --house: #0c1512; --uplift: #24453c; --on-house: #ffffff; --on-house-soft: rgba(255,255,255,.66);
+  --mint: #1f3a30; --gold: #d9b56e; --gold-line: #b8954f; --gold-wash: #26241a; --red: #ff7b6e; --sat: #7fb2e5;
+  --shadow-card: 0 0 0 1px rgba(255,255,255,.06); --shadow-frap: 0 0 6px rgba(0,0,0,.5), 0 8px 12px rgba(0,0,0,.4);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--canvas); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.6; -webkit-tap-highlight-color: transparent; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--house); }
+button, input, select, textarea { font: inherit; color: inherit; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+p { margin: 0; }
+.wrap { max-width: 560px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.num { font-family: var(--f-num); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Header band */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--house); color: var(--on-house); }
+.top .wrap { padding-block: 14px 16px; display: grid; gap: 10px; }
+.top-row { display: flex; align-items: center; gap: 8px; }
+.eyebrow { font-size: 12px; letter-spacing: .12em; color: var(--on-house-soft); font-weight: 500; }
+.week-label { font-family: var(--f-num); font-weight: 800; font-size: 26px; letter-spacing: -0.02em; line-height: 1.15; flex: 1; min-width: 0; }
+.week-label small { font-size: 13px; font-weight: 500; color: var(--on-house-soft); margin-left: 6px; font-family: var(--f-body); letter-spacing: 0; }
+.icon-btn { width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,.35); background: transparent; color: var(--on-house); display: grid; place-items: center; cursor: pointer; transition: transform .2s ease, background .2s ease; flex: none; }
+.icon-btn:active { transform: scale(.95); }
+.icon-btn svg { width: 18px; height: 18px; }
+.stats { display: flex; gap: 6px; flex-wrap: wrap; }
+.stat { font-size: 12px; color: var(--on-house-soft); border: 1px solid rgba(255,255,255,.18); border-radius: 50px; padding: 3px 10px; }
+.stat b { color: var(--on-house); font-family: var(--f-num); font-weight: 700; margin-right: 2px; }
+.stat.gold { border-color: var(--gold-line); color: var(--gold-line); }
+.stat.gold b { color: var(--gold-line); }
+
+main { padding-block: 16px calc(112px + env(safe-area-inset-bottom, 0px)); }
+main > .wrap { display: grid; gap: 12px; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 8px 20px; border-radius: 50px; border: 1px solid var(--accent); background: var(--accent); color: var(--on-accent); font-weight: 700; font-size: 15px; cursor: pointer; transition: transform .2s ease, opacity .2s ease; text-decoration: none; }
+.btn:active { transform: scale(.95); }
+.btn.ghost { background: transparent; color: var(--accent-text); border-color: var(--accent-text); }
+.btn.small { min-height: 36px; padding: 4px 14px; font-size: 13px; }
+.btn.block { width: 100%; }
+.btn.danger { background: transparent; color: var(--red); border-color: var(--red); }
+.btn[disabled] { opacity: .5; pointer-events: none; }
+.btn svg { width: 16px; height: 16px; }
+
+.card { background: var(--card); border-radius: 12px; box-shadow: var(--shadow-card); }
+.sec-title { font-size: 13px; font-weight: 700; color: var(--brand); letter-spacing: .08em; display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+.muted { color: var(--ink-soft); }
+
+/* Banner */
+.banner { background: var(--gold-wash); border: 1px solid var(--gold-line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 8px; font-size: 13px; }
+.banner b { color: var(--gold); }
+
+/* Week list */
+.days { display: grid; gap: 0; }
+.day { display: grid; grid-template-columns: 52px 1fr 16px; gap: 12px; align-items: center; padding: 14px; cursor: pointer; text-align: left; width: 100%; border: 0; background: var(--card); border-radius: 12px; box-shadow: var(--shadow-card); transition: transform .2s ease; }
+.day:active { transform: scale(.98); }
+.day.today { box-shadow: 0 0 0 2px var(--accent); }
+.dnum { display: grid; justify-items: center; line-height: 1.1; }
+.dnum .dow { font-size: 12px; color: var(--ink-soft); font-weight: 700; }
+.dnum .dd { font-family: var(--f-num); font-weight: 800; font-size: 24px; color: var(--brand); }
+.dnum.sun .dow { color: var(--red); } .dnum.sat .dow { color: var(--sat); }
+.dbody { min-width: 0; display: grid; gap: 3px; }
+.dmain { font-weight: 700; font-size: 16px; line-height: 1.4; }
+.dsubs { font-size: 13px; color: var(--ink-soft); line-height: 1.5; }
+.dempty { font-size: 14px; color: var(--ink-soft); }
+.chev { color: var(--ink-soft); font-size: 20px; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { font-size: 11.5px; line-height: 1.3; padding: 3px 9px; border-radius: 50px; background: var(--mint); color: var(--ink); font-weight: 500; }
+.chip.warn { background: color-mix(in srgb, var(--red) 10%, transparent); color: var(--red); }
+.chip.min { background: transparent; border: 1px solid var(--line); color: var(--ink-soft); font-family: var(--f-num); }
+.chip.gold { background: transparent; border: 1px solid var(--gold-line); color: var(--gold); }
+
+/* chain between days */
+.chain { display: flex; align-items: center; gap: 8px; padding: 6px 0 6px 38px; font-size: 12px; color: var(--gold); }
+.chain::before { content: ""; width: 2px; height: 26px; background: repeating-linear-gradient(var(--gold-line) 0 4px, transparent 4px 7px); flex: none; }
+.chain .pills { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.chain .pill { border: 1px solid var(--gold-line); border-radius: 50px; padding: 2px 9px; background: var(--gold-wash); }
+.gap { height: 10px; }
+
+/* Bottom nav */
+.nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; background: var(--card); box-shadow: 0 -1px 0 var(--line), 0 -4px 12px rgba(0,0,0,.05); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.nav .wrap { display: grid; grid-template-columns: repeat(4, 1fr); padding-block: 4px; }
+.nav button { border: 0; background: none; display: grid; justify-items: center; gap: 2px; padding: 8px 0; font-size: 11px; color: var(--ink-soft); cursor: pointer; font-weight: 500; }
+.nav button svg { width: 22px; height: 22px; }
+.nav button[aria-current="page"] { color: var(--accent-text); font-weight: 700; }
+
+/* Frap */
+.frap { position: fixed; z-index: 26; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(76px + env(safe-area-inset-bottom, 0px)); height: 56px; padding: 0 20px 0 16px; border-radius: 50px; border: 0; background: var(--accent); color: var(--on-accent); font-weight: 700; display: flex; align-items: center; gap: 8px; box-shadow: var(--shadow-frap); cursor: pointer; transition: transform .2s ease, box-shadow .2s ease; font-size: 15px; }
+.frap:active { transform: scale(.95); box-shadow: 0 0 6px rgba(0,0,0,.24), 0 8px 12px rgba(0,0,0,0); }
+.frap svg { width: 22px; height: 22px; }
+
+/* Overlay (day detail) */
+.overlay { position: fixed; inset: 0; z-index: 40; background: var(--canvas); overflow-y: auto; overscroll-behavior: contain; padding-top: env(safe-area-inset-top, 0px); }
+.ohead { position: sticky; top: 0; z-index: 2; background: var(--house); color: var(--on-house); }
+.ohead .wrap { padding-block: 10px 0; display: grid; gap: 8px; }
+.ohead h2 { font-size: 20px; font-weight: 700; }
+.ohead .theme { font-size: 13px; color: var(--on-house-soft); }
+.seg { display: grid; grid-template-columns: 1fr 1fr; }
+.seg button { border: 0; background: none; color: var(--on-house-soft); padding: 12px 0 10px; font-weight: 700; font-size: 14px; border-bottom: 3px solid transparent; cursor: pointer; }
+.seg button[aria-selected="true"] { color: var(--on-house); border-color: var(--on-house); }
+.obody { padding-block: 16px calc(40px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 14px; }
+
+.menu-sum { padding: 4px 0; }
+.menu-sum li { display: grid; grid-template-columns: 44px 1fr auto; gap: 10px; align-items: baseline; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.menu-sum li:last-child { border-bottom: 0; }
+.role { font-size: 11px; font-weight: 700; color: var(--brand); letter-spacing: .06em; }
+.menu-sum .nm { font-weight: 700; min-width: 0; }
+ul.plain, ol.plain { list-style: none; margin: 0; padding: 0; }
+
+.leftover { background: var(--gold-wash); border: 1px solid var(--gold-line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 10px; }
+.leftover h3 { font-size: 13px; color: var(--gold); letter-spacing: .06em; display: flex; align-items: center; gap: 6px; }
+.lo-row { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; font-size: 14px; align-items: baseline; }
+.lo-row .tag { font-size: 11px; font-weight: 700; color: var(--gold); border: 1px solid var(--gold-line); border-radius: 50px; padding: 1px 8px; white-space: nowrap; }
+
+.ing-group { padding: 12px 16px; display: grid; gap: 2px; }
+.ing-group + .ing-group { border-top: 1px solid var(--line); }
+.ing-group h4 { margin: 0 0 4px; font-size: 12px; color: var(--ink-soft); font-weight: 700; letter-spacing: .06em; }
+.ing { display: grid; grid-template-columns: 1fr auto; gap: 10px; padding: 5px 0; font-size: 14.5px; align-items: baseline; }
+.ing .q { font-family: var(--f-num); font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 500; text-align: right; }
+.ing .for { display: block; font-size: 11.5px; color: var(--ink-soft); }
+.ing .left { font-size: 11px; color: var(--gold); border: 1px solid var(--gold-line); border-radius: 50px; padding: 0 7px; margin-left: 6px; white-space: nowrap; }
+
+.flow { counter-reset: s; padding: 6px 16px; }
+.flow li { counter-increment: s; display: grid; grid-template-columns: 30px 1fr; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.flow li:last-child { border-bottom: 0; }
+.flow li::before { content: counter(s); width: 26px; height: 26px; border-radius: 50%; background: var(--house); color: var(--on-house); display: grid; place-items: center; font-family: var(--f-num); font-weight: 700; font-size: 13px; }
+.flow .meta { display: flex; gap: 6px; margin-top: 3px; flex-wrap: wrap; }
+
+.kid { padding: 14px 16px; display: grid; gap: 8px; }
+.kid p { font-family: var(--f-hand); font-size: 15px; line-height: 1.7; }
+.kid .who { font-family: var(--f-body); font-size: 11px; font-weight: 700; color: var(--brand); display: block; }
+.tip { font-size: 13.5px; padding: 12px 16px; display: flex; gap: 8px; }
+
+.dish-pills { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.dish-pills::-webkit-scrollbar { display: none; }
+.dish-pills button { flex: none; border: 1px solid var(--line); background: var(--card); border-radius: 50px; padding: 8px 14px; font-size: 13.5px; font-weight: 500; cursor: pointer; transition: transform .2s ease; color: var(--ink); }
+.dish-pills button:active { transform: scale(.95); }
+.dish-pills button[aria-selected="true"] { background: var(--house); color: var(--on-house); border-color: var(--house); }
+.dish-head { padding: 16px; display: grid; gap: 6px; border-bottom: 1px solid var(--line); }
+.dish-head h3 { font-size: 20px; color: var(--brand); }
+.steps { counter-reset: s; padding: 4px 16px 12px; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 24px 1fr; gap: 10px; padding: 8px 0; font-size: 14.5px; }
+.steps li::before { content: counter(s) "."; font-family: var(--f-num); font-weight: 800; color: var(--brand); }
+.sub-h { padding: 12px 16px 0; font-size: 12px; font-weight: 700; color: var(--ink-soft); letter-spacing: .06em; }
+.row-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.updated { font-size: 12px; color: var(--ink-soft); text-align: center; }
+
+/* Sheet */
+.backdrop { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.42); display: flex; align-items: flex-end; justify-content: center; }
+.sheet { background: var(--canvas); width: 100%; max-width: 560px; max-height: calc(100% - 40px - env(safe-area-inset-top, 0px)); overflow-y: auto; border-radius: 16px 16px 0 0; padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)); animation: up .25s cubic-bezier(.25,.46,.45,.94); }
+@keyframes up { from { transform: translateY(24px); opacity: .6; } }
+.sheet .wrap { display: grid; gap: 14px; padding-block: 8px 0; }
+.grab { width: 40px; height: 4px; border-radius: 4px; background: var(--line); margin: 8px auto 0; }
+.sheet h3 { font-size: 18px; color: var(--brand); }
+label.f { display: grid; gap: 4px; font-size: 12.5px; font-weight: 700; color: var(--ink-soft); }
+.inp { width: 100%; min-height: 44px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); padding: 10px 12px; font-size: 16px; font-weight: 400; color: var(--ink); }
+textarea.inp { min-height: 96px; resize: vertical; line-height: 1.6; }
+.inp:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.opt { display: flex; flex-wrap: wrap; gap: 6px; }
+.opt input { position: absolute; opacity: 0; pointer-events: none; }
+.opt label { border: 1px solid var(--line); background: var(--card); border-radius: 50px; padding: 7px 13px; font-size: 13.5px; cursor: pointer; transition: transform .2s ease; }
+.opt label:active { transform: scale(.95); }
+.opt input:checked + label { background: var(--house); color: var(--on-house); border-color: var(--house); }
+.opt input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 2px; }
+.hint { font-size: 12.5px; color: var(--ink-soft); }
+
+/* Progress */
+.prog { display: grid; gap: 6px; }
+.prog li { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--line); flex: none; display: grid; place-items: center; }
+.dot.run { border-color: var(--accent); border-top-color: transparent; animation: spin .8s linear infinite; }
+.dot.ok { background: var(--accent); border-color: var(--accent); }
+.dot.ok::after { content: ""; width: 8px; height: 4px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(-45deg) translate(1px,-1px); }
+.dot.ng { border-color: var(--red); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Schedule */
+.sched { padding: 12px 14px; display: grid; grid-template-columns: 52px 1fr; gap: 12px; align-items: start; }
+.ev-list { display: grid; gap: 6px; min-width: 0; }
+.ev { display: flex; align-items: center; gap: 8px; font-size: 14px; background: var(--ceramic); border-radius: 8px; padding: 6px 6px 6px 10px; }
+.ev .txt { flex: 1; min-width: 0; }
+.ev .who { font-weight: 700; color: var(--brand); margin-right: 4px; }
+.x { width: 32px; height: 32px; border-radius: 50%; border: 0; background: transparent; color: var(--ink-soft); cursor: pointer; font-size: 18px; flex: none; }
+.add-ev { justify-self: start; }
+
+/* Shopping */
+.shop-group { padding: 4px 16px 8px; }
+.shop-group h4 { margin: 12px 0 4px; font-size: 12px; font-weight: 700; color: var(--ink-soft); letter-spacing: .06em; }
+.shop-item { display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+.shop-item:last-child { border-bottom: 0; }
+.shop-item input { width: 22px; height: 22px; accent-color: var(--accent); margin: 0; }
+.shop-item .n { font-size: 15px; min-width: 0; }
+.shop-item .when { display: block; font-size: 11.5px; color: var(--ink-soft); }
+.shop-item .q { font-family: var(--f-num); font-variant-numeric: tabular-nums; font-size: 14px; text-align: right; }
+.shop-item.done .n, .shop-item.done .q { text-decoration: line-through; color: var(--ink-soft); }
+.progress-bar { height: 6px; border-radius: 6px; background: var(--ceramic); overflow: hidden; }
+.progress-bar span { display: block; height: 100%; background: var(--accent); border-radius: 6px; transition: width .3s ease; }
+
+/* Family */
+.member { padding: 14px 16px; display: grid; grid-template-columns: 44px 1fr auto; gap: 12px; align-items: center; cursor: pointer; border: 0; width: 100%; text-align: left; background: var(--card); border-radius: 12px; box-shadow: var(--shadow-card); }
+.avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--mint); display: grid; place-items: center; font-weight: 700; color: var(--brand); font-size: 17px; }
+.avatar.kid { background: var(--gold-wash); color: var(--gold); border: 1px solid var(--gold-line); font-family: var(--f-hand); }
+.member .nm { font-weight: 700; font-size: 16px; }
+.member .det { font-size: 12.5px; color: var(--ink-soft); line-height: 1.5; }
+
+.empty { padding: 28px 20px; text-align: center; display: grid; gap: 10px; justify-items: center; }
+.empty h3 { font-size: 17px; color: var(--brand); }
+.empty p { font-size: 13.5px; color: var(--ink-soft); max-width: 30em; }
+
+.toast { position: fixed; left: 50%; bottom: calc(150px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 70; background: var(--house); color: var(--on-house); padding: 10px 18px; border-radius: 50px; font-size: 13.5px; box-shadow: var(--shadow-frap); max-width: calc(100% - 32px); }
+
+@media (prefers-reduced-motion: reduce) { *, *::before { animation: none !important; transition: none !important; } }
+</style>
+
+<header class="top" id="top"></header>
+<main><div class="wrap" id="view"></div></main>
+<button class="frap" id="frap" data-act="gen-open" aria-label="AIで1週間の献立をつくる">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>
+  AIで献立
+</button>
+<nav class="nav" aria-label="メインメニュー"><div class="wrap" id="nav"></div></nav>
+<div id="overlay-root"></div>
+<div id="sheet-root"></div>
+
+<script>
+const ICON = {
+  week: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11h16M6 11a6 6 0 0 0 12 0"/><path d="M9 7c0-1.5 1-2 1-3M13 7c0-1.5 1-2 1-3"/><path d="M5 19h14"/></svg>',
+  sched: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
+  shop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.2 11.2a1.5 1.5 0 0 1-1.5 1.3H7.7a1.5 1.5 0 0 1-1.5-1.3z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg>',
+  family: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="7" r="3"/><circle cx="17" cy="9.5" r="2.3"/><path d="M2.5 20c0-3.3 2.5-6 5.5-6s5.5 2.7 5.5 6M14 20c0-2.4 1.3-4.6 3-4.6s3 2.2 3 4.6"/></svg>',
+  left: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+  right: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
+  spark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/></svg>',
+  edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>',
+  copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/></svg>',
+  loop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 13.7-5.7L20 8.5M20 4v4.5h-4.5M20 12a8 8 0 0 1-13.7 5.7L4 15.5M4 20v-4.5h4.5"/></svg>',
+};
+const DOW = ['日','月','火','水','木','金','土'];
+const ROLES = ['主菜','副菜','汁物','子ども'];
+const CATS = ['肉・魚','野菜・果物','卵・豆腐・乳','主食・乾物','その他','調味料'];
+const EV_KINDS = ['習い事・部活','帰りが遅い','お弁当がいる','給食メモ','外食・夕食なし','体調・その他'];
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ymd = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+const parseD = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const addDays = (s, n) => { const d = parseD(s); d.setDate(d.getDate()+n); return ymd(d); };
+const mondayOf = d => { const x = new Date(d); x.setDate(x.getDate() - (x.getDay()+6)%7); return ymd(x); };
+const md = s => { const d = parseD(s); return (d.getMonth()+1) + '/' + d.getDate(); };
+const dowOf = s => DOW[parseD(s).getDay()];
+const TODAY = ymd(new Date());
+const uid = () => Math.random().toString(36).slice(2, 9);
+
+const S = {
+  week: mondayOf(new Date()),
+  days: {}, events: {}, family: { members: [], prefs: {} }, checks: {},
+  tab: 'week', day: null, dayTab: 'all', dish: 0,
+  gen: null, db: null, sample: null, me: null, user: null, names: {},
+  loaded: false,
+};
+const weekDates = () => [...Array(7)].map((_, i) => addDays(S.week, i));
+try { const t = localStorage.getItem('kondate.tab'); if (t) S.tab = t; } catch (e) {}
+
+/* ---------- persistence ---------- */
+async function put(path, data) {
+  if (!S.db) return;
+  try { await S.db.doc(path).set(data); }
+  catch (e) { toast(e.code === 'permission_denied' ? '編集権限がないため保存できません。共有設定で編集者にしてもらってください' : '保存できませんでした。通信を確認してもう一度お試しください'); }
+}
+function saveDay(date, doc) {
+  doc.date = date; doc.updatedAt = Date.now(); if (S.me) doc.updatedBy = S.me;
+  delete doc.sample;
+  S.days[date] = doc; render(); return put('days/' + date, doc);
+}
+function deleteDay(date) {
+  delete S.days[date]; render();
+  if (S.db) S.db.doc('days/' + date).delete().catch(() => toast('削除できませんでした'));
+}
+function saveEvents(date) { const d = S.events[date] || { items: [] }; d.date = date; S.events[date] = d; render(); return put('events/' + date, d); }
+function saveFamily() { render(); return put('family/main', S.family); }
+function saveChecks() { const c = S.checks[S.week] || {}; render(); return put('shopping/' + S.week, { week: S.week, checked: c }); }
+
+async function boot() {
+  render();
+  const c = window.claude;
+  if (!c?.use) { S.loaded = true; render(); return; }
+  c.use('user').then(async u => {
+    if (!u) return; S.user = u;
+    try { const me = await u.me(); S.me = me?.id || null; } catch (e) {}
+    resolveNames();
+  });
+  c.use('sample').then(s => { S.sample = s; render(); });
+  const db = await c.use('db');
+  S.db = db; S.loaded = true;
+  if (!db) { render(); return; }
+  const on = (col, fn) => db.collection(col).onSnapshot(snap => { fn(snap); render(); resolveNames(); }, () => {});
+  on('days', snap => { S.days = {}; snap.docs.forEach(d => { const v = d.data(); if (v) S.days[d.id] = v; }); });
+  on('events', snap => { S.events = {}; snap.docs.forEach(d => { const v = d.data(); if (v) S.events[d.id] = v; }); });
+  on('shopping', snap => { S.checks = {}; snap.docs.forEach(d => { const v = d.data(); if (v) S.checks[d.id] = v.checked || {}; }); });
+  db.doc('family/main').onSnapshot(snap => { const v = snap.exists ? snap.data() : null; S.family = { members: v?.members || [], prefs: v?.prefs || {} }; render(); }, () => {});
+}
+async function resolveNames() {
+  if (!S.user) return;
+  const ids = [...new Set(Object.values(S.days).map(d => d.updatedBy).filter(Boolean))].filter(id => !(id in S.names));
+  if (!ids.length) return;
+  try { const ps = await S.user.profiles(ids); ids.forEach(id => { S.names[id] = ps?.[id]?.name || ''; }); renderOverlay(); } catch (e) {}
+}
+
+/* ---------- helpers ---------- */
+function toast(msg) {
+  const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.remove(), 3200);
+}
+function evItems(date) { return S.events[date]?.items || []; }
+function memberName(id) { if (id === 'all') return '家族'; return S.family.members.find(m => m.id === id)?.name || ''; }
+function evChips(date) {
+  return evItems(date).map(e => {
+    const warn = /遅い|外食/.test(e.kind) ? ' warn' : '';
+    const who = memberName(e.who);
+    return `<span class="chip${warn}">${who ? esc(who) + '・' : ''}${esc(e.kind)}${e.memo ? '（' + esc(e.memo) + '）' : ''}</span>`;
+  }).join('');
+}
+function totalMin(day) { return Math.max(0, ...(day.dishes || []).map(d => +d.min || 0)) ; }
+function flowMin(day) { const s = (day.flow || []).reduce((a, f) => a + (+f.min || 0), 0); return s || totalMin(day); }
+
+function parseQty(q) {
+  const m = String(q || '').trim().match(/^約?\s*(\d+(?:\.\d+)?(?:\/\d+)?)\s*([^\d\s(（]*)/);
+  if (!m) return null;
+  let v = m[1]; if (v.includes('/')) { const [a, b] = v.split('/').map(Number); v = a / b; } else v = Number(v);
+  if (!isFinite(v)) return null;
+  return { v, u: m[2] || '' };
+}
+const fmtN = v => { const r = Math.round(v * 100) / 100; const f = { 0.25: '1/4', 0.5: '1/2', 0.75: '3/4', 0.33: '1/3', 0.67: '2/3' }; if (r < 1 && f[r]) return f[r]; return String(r); };
+
+function shoppingList() {
+  const map = new Map();
+  weekDates().forEach(date => {
+    const day = S.days[date]; if (!day) return;
+    (day.dishes || []).forEach(dish => (dish.ing || []).forEach(i => {
+      const name = String(i.n || '').trim(); if (!name) return;
+      const cat = CATS.includes(i.c) ? i.c : 'その他';
+      const key = name.replace(/\s/g, '');
+      if (!map.has(key)) map.set(key, { name, cat, units: {}, raw: [], days: new Set() });
+      const it = map.get(key); it.days.add(dowOf(date));
+      const p = parseQty(i.q);
+      if (p) it.units[p.u] = (it.units[p.u] || 0) + p.v; else if (i.q) it.raw.push(i.q);
+    }));
+  });
+  return [...map.values()].map(it => ({ ...it, qty: [...Object.entries(it.units).map(([u, v]) => fmtN(v) + u), ...[...new Set(it.raw)]].join(' + ') }));
+}
+
+/* ---------- render ---------- */
+function render() { renderTop(); renderNav(); renderView(); renderOverlay(); document.getElementById('frap').hidden = !(S.tab === 'week' && !S.day); }
+
+function renderTop() {
+  const dates = weekDates();
+  const filled = dates.filter(d => S.days[d]?.dishes?.length).length;
+  const carries = dates.reduce((a, d) => a + (S.days[d]?.uses?.length || 0), 0);
+  const titles = { week: '今週の夕ごはん', sched: '家族の予定', shop: '買い物リスト', family: '家族のプロフィール' };
+  const thisWeek = S.week === mondayOf(new Date());
+  const rel = thisWeek ? '今週' : (S.week > mondayOf(new Date()) ? (S.week === addDays(mondayOf(new Date()), 7) ? '来週' : '') : '');
+  const showWeek = S.tab !== 'family';
+  document.getElementById('top').innerHTML = `<div class="wrap">
+    <span class="eyebrow">${titles[S.tab]}</span>
+    ${showWeek ? `<div class="top-row">
+      <button class="icon-btn" data-act="wk" data-n="-7" aria-label="前の週">${ICON.left}</button>
+      <div class="week-label">${md(dates[0])} – ${md(dates[6])}${rel ? `<small>${rel}</small>` : ''}</div>
+      <button class="icon-btn" data-act="wk" data-n="7" aria-label="次の週">${ICON.right}</button>
+    </div>
+    <div class="stats">
+      <span class="stat"><b>${filled}</b>/7日 決定</span>
+      <span class="stat gold"><b>${carries}</b>回 残り物つかいきり</span>
+      <span class="stat"><b>${shoppingList().filter(i => i.cat !== '調味料').length}</b>品 買い物</span>
+    </div>` : `<div class="top-row"><div class="week-label">${S.family.members.length ? S.family.members.length + '人家族' : 'わが家'}</div></div>`}
+  </div>`;
+}
+
+function renderNav() {
+  const tabs = [['week', '献立'], ['sched', '予定'], ['shop', '買い物'], ['family', '家族']];
+  document.getElementById('nav').innerHTML = tabs.map(([k, l]) => `<button data-act="tab" data-tab="${k}" ${S.tab === k ? 'aria-current="page"' : ''}>${ICON[k]}${l}</button>`).join('');
+}
+
+function renderView() {
+  const v = document.getElementById('view');
+  v.innerHTML = ({ week: viewWeek, sched: viewSched, shop: viewShop, family: viewFamily })[S.tab]();
+}
+
+function viewWeek() {
+  const dates = weekDates();
+  const anySample = dates.some(d => S.days[d]?.sample);
+  const none = dates.every(d => !S.days[d]);
+  let h = '';
+  if (anySample) h += `<div class="banner"><p><b>サンプル献立です。</b>家族と予定を登録してから「AIで献立」を押すと、わが家向けに作り直せます。</p></div>`;
+  if (!S.family.members.length && !anySample) h += `<div class="banner"><p><b>まず家族を登録しましょう。</b>子どもの年齢や好き嫌いを入れると、AIが取り分けや味付けまで考えます。</p><div><button class="btn small ghost" data-act="tab" data-tab="family">家族を登録する</button></div></div>`;
+  if (none && S.loaded) h += `<div class="card empty"><h3>この週の献立はまだありません</h3><p>右下の「AIで献立」から7日分をまとめて作れます。前の日に余った食材を次の日の副菜で使い切るように組み立てます。</p><button class="btn" data-act="gen-open">${ICON.spark}7日分をつくる</button></div>`;
+  h += '<div class="days">';
+  dates.forEach((date, i) => {
+    const day = S.days[date];
+    const d = parseD(date);
+    const cls = d.getDay() === 0 ? ' sun' : d.getDay() === 6 ? ' sat' : '';
+    const main = day?.dishes?.find(x => x.role === '主菜') || day?.dishes?.[0];
+    const subs = (day?.dishes || []).filter(x => x !== main).map(x => x.name).join(' · ');
+    const out = evItems(date).some(e => e.kind === '外食・夕食なし');
+    h += `<button class="day${date === TODAY ? ' today' : ''}" data-act="open" data-date="${date}">
+      <span class="dnum${cls}"><span class="dow">${dowOf(date)}</span><span class="dd">${d.getDate()}</span></span>
+      <span class="dbody">
+        ${evItems(date).length ? `<span class="chips">${evChips(date)}</span>` : ''}
+        ${main ? `<span class="dmain">${esc(main.name)}</span>${subs ? `<span class="dsubs">${esc(subs)}</span>` : ''}
+          <span class="chips">${day.uses?.length ? `<span class="chip gold">残り物 ${day.uses.length}品つかう</span>` : ''}${flowMin(day) ? `<span class="chip min">約${flowMin(day)}分</span>` : ''}</span>`
+          : `<span class="dempty">${out ? '夕食なし' : 'まだ決まっていません'}</span>`}
+      </span>
+      <span class="chev" aria-hidden="true">›</span>
+    </button>`;
+    if (i < 6 && day?.carry?.length) {
+      h += `<div class="chain" aria-label="翌日以降への引き継ぎ"><span class="pills">${day.carry.map(c => `<span class="pill">${esc(c.n)} ${esc(c.q || '')} → ${esc(c.to || '')}</span>`).join('')}</span></div>`;
+    } else if (i < 6) h += '<div class="gap"></div>';
+  });
+  return h + '</div>';
+}
+
+function viewSched() {
+  let h = `<p class="hint">習い事で帰りが遅い日、お弁当がいる日、給食のメニューなどを入れておくと、AIが時短メニューや作り置きに切り替えます。</p>`;
+  weekDates().forEach(date => {
+    const d = parseD(date); const cls = d.getDay() === 0 ? ' sun' : d.getDay() === 6 ? ' sat' : '';
+    h += `<div class="card sched"><span class="dnum${cls}"><span class="dow">${dowOf(date)}</span><span class="dd">${d.getDate()}</span></span>
+      <div class="ev-list">${evItems(date).map((e, i) => `<div class="ev"><span class="txt">${memberName(e.who) ? `<span class="who">${esc(memberName(e.who))}</span>` : ''}${esc(e.kind)}${e.memo ? `<span class="muted">（${esc(e.memo)}）</span>` : ''}</span><button class="x" data-act="ev-del" data-date="${date}" data-i="${i}" aria-label="この予定を消す">×</button></div>`).join('')}
+      <button class="btn small ghost add-ev" data-act="ev-add" data-date="${date}">＋ 予定</button></div></div>`;
+  });
+  return h;
+}
+
+function viewShop() {
+  const list = shoppingList();
+  if (!list.length) return `<div class="card empty"><h3>買い物リストは献立から自動で作られます</h3><p>この週の献立ができると、7日分の材料をまとめて表示します。残り物で使い回す食材は、まとめ買いの量で出ます。</p></div>`;
+  const checks = S.checks[S.week] || {};
+  const buy = list.filter(i => i.cat !== '調味料');
+  const done = buy.filter(i => checks[i.name]).length;
+  let h = `<div class="card" style="padding:14px 16px;display:grid;gap:10px">
+    <div class="sec-title"><span>${done} / ${buy.length} 品 かごに入れた</span><button class="btn small ghost" data-act="copy-shop">${ICON.copy}テキストでコピー</button></div>
+    <div class="progress-bar"><span style="width:${buy.length ? done / buy.length * 100 : 0}%"></span></div></div>`;
+  h += '<div class="card">';
+  CATS.forEach(cat => {
+    const items = list.filter(i => i.cat === cat); if (!items.length) return;
+    h += `<div class="shop-group"><h4>${cat === '調味料' ? '調味料（家にあるか確認）' : cat}</h4>${items.map(i => `
+      <label class="shop-item${checks[i.name] ? ' done' : ''}"><input type="checkbox" data-act="check" data-name="${esc(i.name)}" ${checks[i.name] ? 'checked' : ''}>
+      <span class="n">${esc(i.name)}<span class="when">${[...i.days].join('・')}で使う</span></span><span class="q">${esc(i.qty)}</span></label>`).join('')}</div>`;
+  });
+  return h + '</div>';
+}
+
+function viewFamily() {
+  const ms = S.family.members, p = S.family.prefs || {};
+  let h = `<div class="sec-title"><span>家族</span><button class="btn small" data-act="mem-edit">＋ 追加</button></div>`;
+  if (!ms.length) h += `<div class="card empty"><h3>家族を登録しましょう</h3><p>大人と子どもの年齢、好きなもの・苦手なもの・アレルギーを入れると、献立と子ども向けの取り分けに反映されます。</p><button class="btn" data-act="mem-edit">家族を追加する</button></div>`;
+  ms.forEach(m => {
+    const det = [m.likes && '好き: ' + m.likes, m.dislikes && '苦手: ' + m.dislikes, m.allergy && 'アレルギー: ' + m.allergy].filter(Boolean).join(' / ');
+    h += `<button class="member" data-act="mem-edit" data-id="${m.id}"><span class="avatar${m.kind === '子ども' ? ' kid' : ''}">${esc((m.name || '?').slice(0, 1))}</span>
+      <span style="min-width:0"><span class="nm">${esc(m.name)}</span> <span class="muted" style="font-size:13px">${m.kind === '子ども' ? (m.age ? m.age + '歳' : '子ども') : '大人'}</span><span class="det" style="display:block">${esc(det || 'タップして好き嫌いを追加')}</span></span><span class="chev">›</span></button>`;
+  });
+  h += `<div class="sec-title" style="margin-top:8px"><span>献立の方針</span></div>
+  <form class="card" id="prefs" style="padding:16px;display:grid;gap:14px">
+    <div><span class="hint">平日の調理時間</span><div class="opt" style="margin-top:6px">${['15分', '30分', '45分', '気にしない'].map(t => `<input type="radio" name="time" id="pt-${t}" value="${t}" ${(p.time || '30分') === t ? 'checked' : ''}><label for="pt-${t}">${t}</label>`).join('')}</div></div>
+    <div><span class="hint">大事にしたいこと（複数可）</span><div class="opt" style="margin-top:6px">${['節約', '野菜多め', '魚も食べたい', '和食中心', '作り置き', '洗い物少なく'].map(t => `<input type="checkbox" name="focus" id="pf-${t}" value="${t}" ${(p.focus || ['節約']).includes(t) ? 'checked' : ''}><label for="pf-${t}">${t}</label>`).join('')}</div></div>
+    <label class="f">その他のメモ<textarea class="inp" id="pref-notes" name="notes" placeholder="例：平日はご飯を炊く前提。週末は少し手の込んだものもOK">${esc(p.notes || '')}</textarea></label>
+    <button class="btn" type="submit">方針を保存</button>
+  </form>`;
+  return h;
+}
+
+/* ---------- day overlay ---------- */
+function renderOverlay() {
+  const root = document.getElementById('overlay-root');
+  if (!S.day) { root.innerHTML = ''; document.body.style.overflow = ''; return; }
+  const prev = root.querySelector('.overlay')?.scrollTop || 0;
+  const date = S.day, day = S.days[date];
+  const d = parseD(date);
+  const title = `${d.getMonth() + 1}月${d.getDate()}日（${dowOf(date)}）`;
+  let body = '';
+  if (!day) {
+    body = `<div class="card empty"><h3>この日の献立はまだありません</h3><p>前後の日の残り物を考えて、AIがこの日の3品を作ります。</p>
+      <button class="btn" data-act="regen-day" ${S.sample ? '' : 'disabled'}>${ICON.spark}この日をAIで作る</button>
+      <button class="btn ghost" data-act="dish-edit" data-i="-1">自分で料理を入れる</button></div>`;
+  } else if (S.dayTab === 'all') body = dayAll(day, date);
+  else body = dayDish(day, date);
+  root.innerHTML = `<div class="overlay" role="dialog" aria-label="${title}の献立">
+    <div class="ohead"><div class="wrap">
+      <div class="top-row"><button class="icon-btn" data-act="close-day" aria-label="週の一覧に戻る">${ICON.left}</button>
+        <div style="flex:1;min-width:0"><h2>${title}</h2>${day?.theme ? `<p class="theme">${esc(day.theme)}</p>` : ''}</div></div>
+      ${evItems(date).length ? `<div class="chips">${evChips(date)}</div>` : ''}
+      ${day ? `<div class="seg" role="tablist"><button role="tab" data-act="daytab" data-t="all" aria-selected="${S.dayTab === 'all'}">献立全体</button><button role="tab" data-act="daytab" data-t="dish" aria-selected="${S.dayTab === 'dish'}">料理ごと</button></div>` : '<div style="height:12px"></div>'}
+    </div></div>
+    <div class="wrap obody">${body}</div></div>`;
+  root.querySelector('.overlay').scrollTop = prev;
+  document.body.style.overflow = 'hidden';
+}
+
+function dayAll(day, date) {
+  const dishes = day.dishes || [];
+  let h = `<ul class="plain card menu-sum">${dishes.map((x, i) => `<li><span class="role">${esc(x.role)}</span><button data-act="goto-dish" data-i="${i}" class="nm" style="border:0;background:none;padding:0;text-align:left;cursor:pointer;font-weight:700;color:var(--ink)">${esc(x.name)}</button><span class="chip min">${x.min ? x.min + '分' : ''}</span></li>`).join('')}</ul>`;
+  if (day.uses?.length || day.carry?.length) {
+    h += `<div class="leftover"><h3>${ICON.loop.replace('<svg', '<svg width="16" height="16"')}食材のつかいまわし</h3>
+      ${(day.uses || []).map(u => `<div class="lo-row"><span class="tag">前から</span><span><b>${esc(u.n)}</b> ${esc(u.q || '')} <span class="muted">← ${esc(u.from || '')}</span></span></div>`).join('')}
+      ${(day.carry || []).map(c => `<div class="lo-row"><span class="tag">次へ</span><span><b>${esc(c.n)}</b> ${esc(c.q || '')} <span class="muted">→ ${esc(c.to || '')}</span></span></div>`).join('')}
+    </div>`;
+  }
+  // 材料まとめ
+  const rows = [];
+  dishes.forEach(x => (x.ing || []).forEach(i => rows.push({ ...i, dish: x.role })));
+  if (rows.length) {
+    h += `<div class="sec-title"><span>材料まとめ（${esc(day.servings || servingsLabel())}）</span></div><div class="card">`;
+    CATS.forEach(cat => {
+      const rs = rows.filter(r => (CATS.includes(r.c) ? r.c : 'その他') === cat); if (!rs.length) return;
+      h += `<div class="ing-group"><h4>${cat}</h4>${rs.map(r => `<div class="ing"><span>${esc(r.n)}${r.left ? `<span class="left">残り物</span>` : ''}<span class="for">${esc(r.dish)}</span></span><span class="q">${esc(r.q || '')}</span></div>`).join('')}</div>`;
+    });
+    h += '</div>';
+  }
+  if (day.flow?.length) {
+    h += `<div class="sec-title"><span>段取り（3品を同時に）</span><span class="muted num" style="font-weight:500">合計 約${flowMin(day)}分</span></div>
+      <ol class="plain card flow">${day.flow.map(f => `<li><span>${esc(f.t)}<span class="meta">${f.d ? `<span class="chip">${esc(f.d)}</span>` : ''}${f.min ? `<span class="chip min">${f.min}分</span>` : ''}</span></span></li>`).join('')}</ol>`;
+  }
+  const kids = dishes.filter(x => x.kid);
+  if (kids.length) {
+    h += `<div class="sec-title"><span>子どもの分</span></div><div class="card kid">${kids.map(x => `<div><span class="who">${esc(x.name)}</span><p>${esc(x.kid)}</p></div>`).join('')}</div>`;
+  }
+  if (day.tip) h += `<div class="card tip"><span style="color:var(--gold)">${ICON.spark.replace('<svg', '<svg width="18" height="18"')}</span><span>${esc(day.tip)}</span></div>`;
+  h += `<div class="row-btns"><button class="btn ghost small" data-act="dish-edit" data-i="-1">＋ 料理を追加</button><button class="btn ghost small" data-act="regen-day" ${S.sample ? '' : 'disabled'}>${ICON.spark}この日をAIで作り直す</button><button class="btn danger small" data-act="del-day">この日を空にする</button></div>`;
+  h += updatedLine(day);
+  return h;
+}
+
+function dayDish(day, date) {
+  const dishes = day.dishes || [];
+  if (!dishes.length) return `<div class="card empty"><h3>料理がありません</h3><button class="btn" data-act="dish-edit" data-i="-1">料理を追加</button></div>`;
+  const i = Math.min(S.dish, dishes.length - 1), x = dishes[i];
+  let h = `<div class="dish-pills" role="tablist">${dishes.map((y, j) => `<button role="tab" data-act="dish-pick" data-i="${j}" aria-selected="${j === i}">${esc(y.role)}・${esc(y.name)}</button>`).join('')}</div>`;
+  h += `<div class="card"><div class="dish-head"><span class="role">${esc(x.role)}</span><h3>${esc(x.name)}</h3>
+    <div class="chips">${x.min ? `<span class="chip min">約${x.min}分</span>` : ''}<span class="chip min">${esc(day.servings || servingsLabel())}</span>${(x.ing || []).some(r => r.left) ? '<span class="chip gold">残り物をつかう</span>' : ''}</div></div>
+    <p class="sub-h">材料</p><div class="ing-group" style="padding-top:4px">${(x.ing || []).map(r => `<div class="ing"><span>${esc(r.n)}${r.left ? `<span class="left">${esc(typeof r.left === 'string' ? r.left : '残り物')}</span>` : ''}</span><span class="q">${esc(r.q || '')}</span></div>`).join('') || '<p class="hint">材料が入っていません</p>'}</div>
+    <p class="sub-h">作り方</p><ol class="plain steps">${(x.steps || []).map(s => `<li><span>${esc(s)}</span></li>`).join('') || '<li><span class="hint">手順が入っていません</span></li>'}</ol>
+    ${x.kid ? `<div class="kid" style="border-top:1px solid var(--line)"><span class="who">子どもの分</span><p>${esc(x.kid)}</p></div>` : ''}
+  </div>
+  <div class="row-btns"><button class="btn small" data-act="dish-edit" data-i="${i}">${ICON.edit}編集</button><button class="btn small ghost" data-act="swap-open" data-i="${i}" ${S.sample ? '' : 'disabled'}>${ICON.spark}AIで別の料理に</button></div>`;
+  return h + updatedLine(day);
+}
+function updatedLine(day) {
+  if (!day.updatedAt) return '';
+  const t = new Date(day.updatedAt);
+  const who = day.updatedBy ? (day.updatedBy === S.me ? 'あなた' : (S.names[day.updatedBy] || '')) : '';
+  return `<p class="updated">${who ? esc(who) + 'が' : ''}${t.getMonth() + 1}/${t.getDate()} ${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')} に更新</p>`;
+}
+
+/* ---------- sheets ---------- */
+function openSheet(html, onMount) {
+  const root = document.getElementById('sheet-root');
+  root.innerHTML = `<div class="backdrop" data-act="sheet-bg"><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div><div class="wrap">${html}</div></div></div>`;
+  onMount && onMount(root.querySelector('.sheet'));
+}
+function closeSheet() { document.getElementById('sheet-root').innerHTML = ''; }
+
+function sheetEvent(date) {
+  const ms = S.family.members;
+  openSheet(`<h3>${md(date)}（${dowOf(date)}）の予定</h3>
+  <form id="ev-form" style="display:grid;gap:14px">
+    <div><span class="hint">だれの予定？</span><div class="opt" style="margin-top:6px">
+      <input type="radio" name="who" id="w-all" value="all" checked><label for="w-all">家族</label>
+      ${ms.map(m => `<input type="radio" name="who" id="w-${m.id}" value="${m.id}"><label for="w-${m.id}">${esc(m.name)}</label>`).join('')}</div></div>
+    <div><span class="hint">内容</span><div class="opt" style="margin-top:6px">${EV_KINDS.map((k, i) => `<input type="radio" name="kind" id="k-${i}" value="${k}" ${i === 0 ? 'checked' : ''}><label for="k-${i}">${k}</label>`).join('')}</div></div>
+    <label class="f">メモ（任意）<input class="inp" id="ev-memo" name="memo" placeholder="例：19時帰宅／給食がカレー"></label>
+    <button class="btn block" type="submit">予定を追加</button>
+  </form>`, el => {
+    el.querySelector('form').addEventListener('submit', e => {
+      e.preventDefault(); const f = new FormData(e.target);
+      const d = S.events[date] || { items: [] }; d.items = [...(d.items || []), { who: f.get('who'), kind: f.get('kind'), memo: String(f.get('memo') || '').trim() }];
+      S.events[date] = d; saveEvents(date); closeSheet();
+    });
+  });
+}
+
+function sheetMember(id) {
+  const m = S.family.members.find(x => x.id === id) || { id: uid(), kind: '子ども' };
+  const isNew = !S.family.members.some(x => x.id === id);
+  openSheet(`<h3>${isNew ? '家族を追加' : esc(m.name) + 'さん'}</h3>
+  <form id="mem-form" style="display:grid;gap:12px">
+    <div class="opt">${['大人', '子ども'].map(k => `<input type="radio" name="kind" id="mk-${k}" value="${k}" ${m.kind === k ? 'checked' : ''}><label for="mk-${k}">${k}</label>`).join('')}</div>
+    <div class="two"><label class="f">呼び名<input class="inp" id="m-name" name="name" required value="${esc(m.name || '')}" placeholder="例：はる"></label>
+    <label class="f">年齢<input class="inp" id="m-age" name="age" inputmode="numeric" value="${esc(m.age || '')}" placeholder="例：6"></label></div>
+    <label class="f">好きなもの<input class="inp" id="m-likes" name="likes" value="${esc(m.likes || '')}" placeholder="例：からあげ、コーン、たまご"></label>
+    <label class="f">苦手なもの<input class="inp" id="m-dislikes" name="dislikes" value="${esc(m.dislikes || '')}" placeholder="例：ピーマン、きのこ"></label>
+    <label class="f">アレルギー（絶対に使わない）<input class="inp" id="m-allergy" name="allergy" value="${esc(m.allergy || '')}" placeholder="例：えび、そば"></label>
+    <label class="f">メモ<input class="inp" id="m-note" name="note" value="${esc(m.note || '')}" placeholder="例：辛いものはまだ無理／よく食べる"></label>
+    <button class="btn block" type="submit">保存</button>
+    ${isNew ? '' : '<button class="btn danger block" type="button" data-act="mem-del" data-id="' + m.id + '">この人を削除</button>'}
+  </form>`, el => {
+    el.querySelector('form').addEventListener('submit', e => {
+      e.preventDefault(); const f = new FormData(e.target);
+      const nm = { id: m.id }; ['kind', 'name', 'age', 'likes', 'dislikes', 'allergy', 'note'].forEach(k => nm[k] = String(f.get(k) || '').trim());
+      const ms = S.family.members.filter(x => x.id !== m.id);
+      const idx = S.family.members.findIndex(x => x.id === m.id);
+      if (idx >= 0) ms.splice(idx, 0, nm); else ms.push(nm);
+      S.family.members = ms; saveFamily(); closeSheet(); toast('保存しました');
+    });
+  });
+}
+
+function sheetDish(i) {
+  const day = S.days[S.day] || { dishes: [] };
+  const x = i >= 0 ? day.dishes[i] : { role: '副菜', name: '', ing: [], steps: [] };
+  openSheet(`<h3>${i >= 0 ? '料理を編集' : '料理を追加'}</h3>
+  <form id="dish-form" style="display:grid;gap:12px">
+    <div class="opt">${ROLES.map(r => `<input type="radio" name="role" id="dr-${r}" value="${r}" ${x.role === r ? 'checked' : ''}><label for="dr-${r}">${r}</label>`).join('')}</div>
+    <div class="two" style="grid-template-columns:2fr 1fr"><label class="f">料理名<input class="inp" id="d-name" name="name" required value="${esc(x.name)}"></label>
+    <label class="f">時間(分)<input class="inp" id="d-min" name="min" inputmode="numeric" value="${esc(x.min || '')}"></label></div>
+    <label class="f">材料（1行に1つ「名前 分量」）<textarea class="inp" id="d-ing" name="ing" rows="6" placeholder="鶏もも肉 300g&#10;玉ねぎ 1/2個&#10;しょうゆ 大さじ2">${esc((x.ing || []).map(r => r.n + (r.q ? ' ' + r.q : '')).join('\n'))}</textarea></label>
+    <label class="f">作り方（1行に1手順）<textarea class="inp" id="d-steps" name="steps" rows="6">${esc((x.steps || []).join('\n'))}</textarea></label>
+    <label class="f">子どもの分のメモ<input class="inp" id="d-kid" name="kid" value="${esc(x.kid || '')}" placeholder="例：辛味を入れる前に取り分ける"></label>
+    <button class="btn block" type="submit">保存</button>
+    ${i >= 0 ? `<button class="btn danger block" type="button" data-act="dish-del" data-i="${i}">この料理を削除</button>` : ''}
+  </form>`, el => {
+    el.querySelector('form').addEventListener('submit', e => {
+      e.preventDefault(); const f = new FormData(e.target);
+      const old = new Map((x.ing || []).map(r => [r.n, r]));
+      const ing = String(f.get('ing') || '').split('\n').map(l => l.trim()).filter(Boolean).map(l => {
+        const m = l.match(/^(.+?)[\s　]+(\S+)$/); const n = m ? m[1].trim() : l, q = m ? m[2] : '';
+        const o = old.get(n) || {}; return { n, q, c: o.c || guessCat(n), ...(o.left ? { left: o.left } : {}) };
+      });
+      const nd = { ...x, role: f.get('role'), name: String(f.get('name')).trim(), min: Number(f.get('min')) || '', ing, steps: String(f.get('steps') || '').split('\n').map(s => s.trim()).filter(Boolean), kid: String(f.get('kid') || '').trim() };
+      const doc = JSON.parse(JSON.stringify(day));
+      doc.dishes = doc.dishes || [];
+      if (i >= 0) doc.dishes[i] = nd; else { doc.dishes.push(nd); S.dish = doc.dishes.length - 1; }
+      saveDay(S.day, doc); closeSheet(); toast('保存しました');
+    });
+  });
+}
+function guessCat(n) {
+  if (/肉|鶏|豚|牛|ひき|鮭|さば|鯖|魚|えび|いか|たら|ぶり|ツナ|ベーコン|ハム|ウインナー|ちくわ|しらす/.test(n)) return '肉・魚';
+  if (/卵|たまご|豆腐|厚揚げ|油揚げ|牛乳|チーズ|ヨーグルト|納豆/.test(n)) return '卵・豆腐・乳';
+  if (/しょうゆ|醤油|みそ|味噌|塩|砂糖|酢|みりん|酒|油|こしょう|だし|ソース|ケチャップ|マヨ|片栗粉|小麦粉|コンソメ|鶏がら|ごま油/.test(n)) return '調味料';
+  if (/米|ご飯|パスタ|うどん|そば|パン|麺|わかめ|ひじき|春雨|乾/.test(n)) return '主食・乾物';
+  return '野菜・果物';
+}
+
+/* ---------- AI ---------- */
+function servingsLabel() {
+  const ms = S.family.members; if (!ms.length) return '4人分';
+  const a = ms.filter(m => m.kind !== '子ども').length, k = ms.length - a;
+  return `大人${a}人${k ? '・子ども' + k + '人' : ''}分`;
+}
+function familyText() {
+  const ms = S.family.members, p = S.family.prefs || {};
+  const lines = ms.length ? ms.map(m => `- ${m.kind === '子ども' ? '子ども' : '大人'} ${m.name}${m.age ? '（' + m.age + '歳）' : ''}${m.likes ? ' 好き:' + m.likes : ''}${m.dislikes ? ' 苦手:' + m.dislikes : ''}${m.allergy ? ' アレルギー:' + m.allergy + '（絶対に使わない）' : ''}${m.note ? ' メモ:' + m.note : ''}`).join('\n') : '- 未登録（4人分の一般的な家庭として考える）';
+  return `【家族】${servingsLabel()}\n${lines}\n【方針】平日の調理時間:${p.time || '30分'} / 大事にしたいこと:${(p.focus || ['節約']).join('・')}${p.notes ? '\nメモ:' + p.notes : ''}`;
+}
+function eventsText(dates) {
+  const ls = dates.map(d => { const it = evItems(d); return it.length ? `- ${d}(${dowOf(d)}): ${it.map(e => (memberName(e.who) || '家族') + '「' + e.kind + (e.memo ? '・' + e.memo : '') + '」').join('、')}` : null; }).filter(Boolean);
+  return '【予定】\n' + (ls.length ? ls.join('\n') : '- 特になし') + '\n（帰りが遅い日は20分以内か作り置き活用。外食・夕食なしの日はdishesを空配列に。お弁当がいる日の前日は弁当に回せるおかずを多めに。給食メモと同じ料理は避ける）';
+}
+const JSON_RULES = `c(分類)は「肉・魚」「野菜・果物」「卵・豆腐・乳」「主食・乾物」「調味料」「その他」のいずれか。ご飯（白米）は献立に含めない。`;
+
+function outlinePrompt(dates, req) {
+  return `あなたは日本の家庭料理に詳しい献立プランナーです。${dates[0]}から${dates.length}日分の夕食の献立の骨組みを作ってください。
+
+【最重要：食材の使い回し】
+- 肉・魚・豆腐・野菜はパック単位（鶏むね2枚、豆腐1丁、キャベツ1/2玉など）で買う前提。ある日に使って残った分を、翌日以降の副菜や汁物で使い切る。
+- 例：月曜の主菜で鶏むね肉を使ったら、火曜の副菜で残りの鶏むね肉を使う。
+- 2日目以降は毎日、少なくとも1つ前日以前の残りを使う。週の終わりに中途半端な食材が残らないようにする。
+- usesは「この日に使う残り物」、carryは「この日の買い物のうち翌日以降に残すもの」。両方の食材名・量・日付が対応するようにする。
+【その他】
+- 基本は主菜・副菜・汁物の3品。同じ主材料の主菜を2日続けない。肉と魚のバランス。
+- 子どもの年齢・好き嫌いを考える。苦手な食材は控えめに、または食べやすく工夫。アレルギー食材は絶対に使わない。
+
+${familyText()}
+${eventsText(dates)}
+${req ? '【今回の要望】' + req : ''}
+
+JSONのみで答える:
+{"days":[{"date":"YYYY-MM-DD","theme":"その日のひとこと(15字以内)","dishes":[{"role":"主菜","name":"鶏むね肉のねぎ塩焼き"},{"role":"副菜","name":"…"},{"role":"汁物","name":"…"}],"uses":[{"n":"鶏むね肉","q":"1枚","from":"月の主菜"}],"carry":[{"n":"鶏むね肉","q":"1枚","to":"火の副菜"}]}]}
+fromやtoは「月の主菜」のように曜日＋役割で書く。`;
+}
+function detailPrompt(date, o, prevCarry, nextUses, req) {
+  const fixed = o?.dishes?.length;
+  return `日本の家庭の夕食献立の詳しいレシピを作ってください。${servingsLabel()}。
+日付: ${date}（${dowOf(date)}）
+${fixed ? '献立: ' + o.dishes.map(x => x.role + '「' + x.name + '」').join(' / ') : '献立: まだ決まっていないので、主菜・副菜・汁物の3品を考えてください。'}
+${o?.uses?.length ? '前日までの残りを使う: ' + o.uses.map(u => u.n + ' ' + (u.q || '') + '（' + (u.from || '') + '）').join('、') : ''}
+${o?.carry?.length ? '翌日以降に残す（多めに買って残す）: ' + o.carry.map(c => c.n + ' ' + (c.q || '') + '→' + (c.to || '')).join('、') : ''}
+${prevCarry ? '前の日から回ってくる食材（使い切ってください）: ' + prevCarry : ''}
+${nextUses ? '翌日が使う予定の残り物（この日に多めに買って残す）: ' + nextUses : ''}
+${familyText()}
+${eventsText([date])}
+${req ? '【要望】' + req : ''}
+
+ルール:
+- 材料は${servingsLabel()}の使う分量（g・個・枚・大さじ等）。残り物から使う材料には "left":"月の主菜の残り" のように付ける。翌日に残す食材は、この日の材料に買う量全体を書き、qの後ろに（半分は翌日用）などと書かない（qは使う量だけ）。
+- stepsは1手順1文で4〜6手順。火加減と時間を具体的に。
+- flowは3品を同時に効率よく作る段取り（下ごしらえまとめ・並行作業・煮込み中に別の料理）。各手順にどの料理か(d: "主菜"など)と目安の分(min)。5〜9手順。
+- kidは子どもへの取り分け・味付け・切り方の工夫を1〜2文（登録された子どもの名前と年齢に合わせる。子どもがいなければ空文字）。
+- ${JSON_RULES}
+
+JSONのみで答える:
+{"theme":"…","dishes":[{"role":"主菜","name":"…","min":20,"ing":[{"n":"鶏むね肉","q":"1枚(250g)","c":"肉・魚"}],"steps":["…"],"kid":"…"}],"flow":[{"t":"…","d":"主菜","min":5}],"uses":[{"n":"…","q":"…","from":"…"}],"carry":[{"n":"…","q":"…","to":"…"}],"tip":"節約・使い切りのひとこと(40字以内)"}`;
+}
+function cleanDay(date, r, o) {
+  const dishes = (Array.isArray(r?.dishes) ? r.dishes : []).map(x => ({
+    role: ROLES.includes(x.role) ? x.role : '副菜', name: String(x.name || ''), min: Number(x.min) || '',
+    ing: (Array.isArray(x.ing) ? x.ing : []).map(i => ({ n: String(i.n || ''), q: String(i.q || ''), c: CATS.includes(i.c) ? i.c : guessCat(String(i.n || '')), ...(i.left ? { left: String(i.left) } : {}) })).filter(i => i.n),
+    steps: (Array.isArray(x.steps) ? x.steps : []).map(String), kid: String(x.kid || ''),
+  })).filter(x => x.name);
+  const arr = (a, k) => (Array.isArray(a) ? a : []).map(v => ({ n: String(v.n || ''), q: String(v.q || ''), [k]: String(v[k] || '') })).filter(v => v.n);
+  return {
+    date, theme: String(r?.theme || o?.theme || ''), dishes, servings: servingsLabel(),
+    flow: (Array.isArray(r?.flow) ? r.flow : []).map(f => ({ t: String(f.t || ''), d: String(f.d || ''), min: Number(f.min) || '' })).filter(f => f.t),
+    uses: arr(o?.uses?.length ? o.uses : r?.uses, 'from'), carry: arr(o?.carry?.length ? o.carry : r?.carry, 'to'),
+    tip: String(r?.tip || ''),
+  };
+}
+function aiError(e) {
+  const c = e?.code;
+  if (c === 'not_granted' || c === 'sampling_disabled' || c === 'capability_disabled') return 'このページでAIを使う許可がありません。ページ右上のメニューから許可してください';
+  if (c === 'rate_limited') return 'AIの利用が混み合っています。少し待ってからもう一度お試しください';
+  if (c === 'invalid_json') return 'AIの返答を読み取れませんでした。もう一度お試しください';
+  return 'AIで作れませんでした（' + (c || 'エラー') + '）。もう一度お試しください';
+}
+
+function sheetGen() {
+  const dates = weekDates();
+  const has = dates.some(d => S.days[d] && !S.days[d].sample);
+  openSheet(`<h3>${md(dates[0])}〜${md(dates[6])} の献立をAIでつくる</h3>
+  ${S.sample ? '' : '<div class="banner"><p><b>この画面ではAIを使えません。</b>claude.aiにサインインした状態で開いてください。</p></div>'}
+  <form id="gen-form" style="display:grid;gap:12px">
+    <p class="hint">家族のプロフィール（${S.family.members.length}人）と、この週の予定（${dates.reduce((a, d) => a + evItems(d).length, 0)}件）をもとに作ります。前の日の残り食材を次の日に使い回します。</p>
+    <label class="f">今週の要望（任意）<textarea class="inp" id="gen-req" name="req" rows="3" placeholder="例：魚を2回入れたい／金曜はカレー／冷蔵庫にキャベツ半分と卵がある"></textarea></label>
+    ${has ? '<p class="hint" style="color:var(--red)">この週にすでに入っている献立は上書きされます。</p>' : ''}
+    <button class="btn block" type="submit" ${S.sample ? '' : 'disabled'}>${ICON.spark}7日分をつくる</button>
+  </form>
+  <ul class="plain prog" id="gen-prog" hidden></ul>`, el => {
+    el.querySelector('form').addEventListener('submit', e => { e.preventDefault(); runWeek(String(new FormData(e.target).get('req') || '').trim()); });
+  });
+}
+function renderProg() {
+  const ul = document.getElementById('gen-prog'); if (!ul || !S.gen) return;
+  ul.hidden = false;
+  ul.innerHTML = S.gen.map(s => `<li><span class="dot ${s.st}"></span><span>${esc(s.label)}</span></li>`).join('');
+}
+async function runWeek(req) {
+  if (!S.sample || S.gen) return;
+  const form = document.getElementById('gen-form'); if (form) form.hidden = true;
+  const dates = weekDates();
+  S.gen = [{ label: '1週間の流れと使い回しを考える', st: 'run' }, ...dates.map(d => ({ label: `${md(d)}（${dowOf(d)}）のレシピと段取り`, st: '' }))];
+  renderProg();
+  let outline;
+  try {
+    outline = await S.sample.json(outlinePrompt(dates, req), { modelTier: 'complex' });
+    if (!Array.isArray(outline?.days)) throw { code: 'invalid_json' };
+    S.gen[0].st = 'ok';
+  } catch (e) { S.gen[0].st = 'ng'; renderProg(); toast(aiError(e)); S.gen = null; if (form) form.hidden = false; return; }
+  renderProg();
+  const byDate = Object.fromEntries(outline.days.map(d => [d.date, d]));
+  let ok = 0;
+  const queue = dates.map((d, i) => ({ d, i, o: byDate[d] || outline.days[i] }));
+  const worker = async () => {
+    while (queue.length) {
+      const { d, i, o } = queue.shift();
+      if (o && Array.isArray(o.dishes) && !o.dishes.length) { S.gen[i + 1].st = 'ok'; S.gen[i + 1].label += '（夕食なし）'; renderProg(); deleteDay(d); continue; }
+      S.gen[i + 1].st = 'run'; renderProg();
+      try {
+        const r = await S.sample.json(detailPrompt(d, o, '', '', req), { modelTier: 'default' });
+        await saveDay(d, cleanDay(d, r, o)); S.gen[i + 1].st = 'ok'; ok++;
+      } catch (e) { S.gen[i + 1].st = 'ng'; if (e?.code === 'rate_limited' || e?.code === 'not_granted') { toast(aiError(e)); queue.length = 0; } }
+      renderProg();
+    }
+  };
+  await Promise.all([worker(), worker(), worker()]);
+  const failed = S.gen.filter(s => s.st === 'ng').length;
+  S.gen = null;
+  toast(failed ? `${ok}日分できました。${failed}日分は失敗したので、その日を開いて「AIで作る」を押してください` : '7日分の献立ができました');
+  if (!failed) closeSheet();
+}
+async function regenDay(req) {
+  if (!S.sample) return;
+  const date = S.day;
+  const prev = S.days[addDays(date, -1)], next = S.days[addDays(date, 1)];
+  const prevCarry = (prev?.carry || []).map(c => c.n + ' ' + c.q).join('、');
+  const nextUses = (next?.uses || []).map(u => u.n + ' ' + u.q).join('、');
+  toast('AIが' + md(date) + 'の献立を考えています…');
+  try {
+    const r = await S.sample.json(detailPrompt(date, null, prevCarry, nextUses, req), { modelTier: 'default' });
+    const doc = cleanDay(date, r, null); if (!doc.dishes.length) throw { code: 'invalid_json' };
+    S.dish = 0; await saveDay(date, doc); toast('作り直しました');
+  } catch (e) { toast(aiError(e)); }
+}
+function sheetRegen() {
+  openSheet(`<h3>${md(S.day)}（${dowOf(S.day)}）をAIで作り直す</h3>
+  <p class="hint">前の日から回ってくる食材と、翌日に残す食材を考えて3品を作ります。</p>
+  <form id="rg-form" style="display:grid;gap:12px"><label class="f">要望（任意）<input class="inp" id="rg-req" name="req" placeholder="例：もっと簡単に／魚にしたい"></label>
+  <button class="btn block" type="submit">${ICON.spark}作り直す</button></form>`, el => {
+    el.querySelector('form').addEventListener('submit', e => { e.preventDefault(); const req = String(new FormData(e.target).get('req') || '').trim(); closeSheet(); regenDay(req); });
+  });
+}
+function sheetSwap(i) {
+  const day = S.days[S.day], x = day.dishes[i];
+  openSheet(`<h3>「${esc(x.name)}」を別の料理に</h3>
+  <form id="sw-form" style="display:grid;gap:12px"><label class="f">どんな料理がいい？（任意）<input class="inp" id="sw-req" name="req" placeholder="例：子どもが好きな味／10分でできるもの"></label>
+  <p class="hint">${(x.ing || []).some(r => r.left) ? '残り物（' + esc(x.ing.filter(r => r.left).map(r => r.n).join('、')) + '）は引き続き使います。' : '同じ役割（' + esc(x.role) + '）の料理に替えます。'}</p>
+  <button class="btn block" type="submit">${ICON.spark}差し替える</button></form>`, el => {
+    el.querySelector('form').addEventListener('submit', async e => {
+      e.preventDefault(); const req = String(new FormData(e.target).get('req') || '').trim(); closeSheet();
+      toast('AIが別の料理を考えています…');
+      const others = day.dishes.filter((_, j) => j !== i).map(y => y.role + '「' + y.name + '」').join('、');
+      const lefts = (x.ing || []).filter(r => r.left).map(r => r.n + ' ' + r.q + '（' + r.left + '）').join('、');
+      const p = `日本の家庭の夕食で、${x.role}「${x.name}」を別の料理に差し替えてください。${servingsLabel()}。
+ほかの料理: ${others || 'なし'}
+${lefts ? '必ず使う残り物: ' + lefts : ''}
+${familyText()}
+${req ? '【要望】' + req : ''}
+ほかの料理と味や食材がかぶらないようにする。新しい料理を含めた3品の段取り(flow)も作り直す。${JSON_RULES}
+JSONのみ: {"dish":{"role":"${x.role}","name":"…","min":15,"ing":[{"n":"…","q":"…","c":"…","left":"(残り物なら)"}],"steps":["…"],"kid":"…"},"flow":[{"t":"…","d":"主菜","min":5}]}`;
+      try {
+        const r = await S.sample.json(p, { modelTier: 'default' });
+        const c = cleanDay(S.day, { dishes: [r.dish], flow: r.flow }, null);
+        if (!c.dishes.length) throw { code: 'invalid_json' };
+        const doc = JSON.parse(JSON.stringify(S.days[S.day]));
+        doc.dishes[i] = c.dishes[0]; if (c.flow.length) doc.flow = c.flow;
+        await saveDay(S.day, doc); toast('「' + c.dishes[0].name + '」に替えました');
+      } catch (err) { toast(aiError(err)); }
+    });
+  });
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-act]'); if (!t) return;
+  const a = t.dataset.act;
+  if (a === 'sheet-bg') { if (e.target === t && !S.gen) closeSheet(); return; }
+  if (a === 'check') return;
+  switch (a) {
+    case 'tab': S.tab = t.dataset.tab; S.day = null; try { localStorage.setItem('kondate.tab', S.tab); } catch (err) {} render(); window.scrollTo(0, 0); break;
+    case 'wk': S.week = addDays(S.week, +t.dataset.n); render(); break;
+    case 'open': S.day = t.dataset.date; S.dayTab = 'all'; S.dish = 0; render(); break;
+    case 'close-day': S.day = null; render(); break;
+    case 'daytab': S.dayTab = t.dataset.t; renderOverlay(); document.querySelector('.overlay').scrollTop = 0; break;
+    case 'dish-pick': S.dish = +t.dataset.i; renderOverlay(); break;
+    case 'goto-dish': S.dish = +t.dataset.i; S.dayTab = 'dish'; renderOverlay(); document.querySelector('.overlay').scrollTop = 0; break;
+    case 'dish-edit': sheetDish(+t.dataset.i); break;
+    case 'dish-del': { const doc = JSON.parse(JSON.stringify(S.days[S.day])); doc.dishes.splice(+t.dataset.i, 1); S.dish = 0; saveDay(S.day, doc); closeSheet(); break; }
+    case 'del-day': openSheet(`<h3>${md(S.day)}の献立を空にしますか？</h3><p class="hint">この日の料理・段取りが消えます。予定は残ります。</p><button class="btn danger block" data-act="del-day-ok">空にする</button><button class="btn ghost block" data-act="sheet-close">やめる</button>`); break;
+    case 'del-day-ok': deleteDay(S.day); closeSheet(); break;
+    case 'sheet-close': closeSheet(); break;
+    case 'regen-day': if (S.days[S.day]) sheetRegen(); else regenDay(''); break;
+    case 'swap-open': sheetSwap(+t.dataset.i); break;
+    case 'gen-open': sheetGen(); break;
+    case 'ev-add': sheetEvent(t.dataset.date); break;
+    case 'ev-del': { const d = S.events[t.dataset.date]; d.items.splice(+t.dataset.i, 1); saveEvents(t.dataset.date); break; }
+    case 'mem-edit': sheetMember(t.dataset.id); break;
+    case 'mem-del': S.family.members = S.family.members.filter(m => m.id !== t.dataset.id); saveFamily(); closeSheet(); break;
+    case 'copy-shop': copyShop(); break;
+  }
+});
+document.addEventListener('change', e => {
+  const t = e.target; if (t.dataset?.act !== 'check') return;
+  const c = { ...(S.checks[S.week] || {}) }; if (t.checked) c[t.dataset.name] = true; else delete c[t.dataset.name];
+  S.checks[S.week] = c; saveChecks();
+});
+document.addEventListener('submit', e => {
+  if (e.target.id !== 'prefs') return;
+  e.preventDefault(); const f = new FormData(e.target);
+  S.family.prefs = { time: f.get('time'), focus: f.getAll('focus'), notes: String(f.get('notes') || '').trim() };
+  saveFamily(); toast('方針を保存しました');
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (document.getElementById('sheet-root').innerHTML && !S.gen) closeSheet(); else if (S.day) { S.day = null; render(); } } });
+function copyShop() {
+  const list = shoppingList(); const checks = S.checks[S.week] || {};
+  const txt = `買い物リスト ${md(S.week)}〜${md(addDays(S.week, 6))}\n` + CATS.filter(c => c !== '調味料').map(cat => {
+    const its = list.filter(i => i.cat === cat && !checks[i.name]); return its.length ? `【${cat}】\n` + its.map(i => `・${i.name} ${i.qty}`).join('\n') : '';
+  }).filter(Boolean).join('\n');
+  navigator.clipboard.writeText(txt).then(() => toast('コピーしました。LINEなどに貼り付けできます'), () => {
+    openSheet(`<h3>買い物リスト</h3><textarea class="inp" id="copy-area" rows="12" readonly>${esc(txt)}</textarea><p class="hint">長押しで全選択してコピーしてください。</p>`, el => el.querySelector('textarea').select());
+  });
+}
+
+boot();
+</script>
