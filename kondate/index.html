@@ -233,6 +233,26 @@ textarea.inp { min-height: 96px; resize: vertical; line-height: 1.6; }
 .ev .who { font-weight: 700; color: var(--brand); margin-right: 4px; }
 .x { width: 32px; height: 32px; border-radius: 50%; border: 0; background: transparent; color: var(--ink-soft); cursor: pointer; font-size: 18px; flex: none; }
 .add-ev { justify-self: start; }
+.chip.lunch { background: var(--ceramic); color: var(--ink); }
+.chip.lunch b { color: var(--brand); font-weight: 700; margin-right: 3px; }
+.lunch-card { padding: 16px; display: grid; gap: 12px; }
+.lunch-card h3 { font-size: 16px; color: var(--brand); }
+.drop { border: 1.5px dashed var(--accent-text); border-radius: 12px; padding: 20px 16px; display: grid; justify-items: center; gap: 6px; text-align: center; cursor: pointer; background: var(--card); color: var(--accent-text); font-weight: 700; }
+.drop input { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
+.drop svg { width: 28px; height: 28px; }
+.drop .hint { font-weight: 400; }
+.files { display: flex; gap: 6px; flex-wrap: wrap; }
+.files img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); }
+.files .pdf { width: 64px; height: 64px; border-radius: 8px; border: 1px solid var(--line); display: grid; place-items: center; font-family: var(--f-num); font-weight: 800; color: var(--red); background: var(--card); font-size: 13px; }
+.lrow { display: grid; grid-template-columns: 56px 1fr 32px; gap: 8px; align-items: center; }
+.lrow .d { font-family: var(--f-num); font-weight: 700; font-size: 14px; color: var(--brand); }
+.lrow .d small { display: block; font-family: var(--f-body); font-weight: 500; font-size: 11px; color: var(--ink-soft); }
+.lrow .inp { min-height: 40px; padding: 8px 10px; font-size: 15px; }
+.menus-list { display: grid; gap: 6px; }
+.menus-list .ev .txt small { color: var(--ink-soft); margin-left: 4px; }
+.lunch-day { padding: 12px 16px; display: grid; gap: 6px; }
+.lunch-day p { font-size: 14px; }
+.lunch-day b { color: var(--brand); margin-right: 6px; font-size: 12.5px; }
 
 /* Shopping */
 .shop-group { padding: 4px 16px 8px; }
@@ -284,6 +304,7 @@ const ICON = {
   spark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/></svg>',
   edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>',
   copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/></svg>',
+  camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
   loop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 13.7-5.7L20 8.5M20 4v4.5h-4.5M20 12a8 8 0 0 1-13.7 5.7L4 15.5M4 20v-4.5h4.5"/></svg>',
 };
 const DOW = ['日','月','火','水','木','金','土'];
@@ -303,7 +324,7 @@ const uid = () => Math.random().toString(36).slice(2, 9);
 
 const S = {
   week: mondayOf(new Date()),
-  days: {}, events: {}, family: { members: [], prefs: {} }, checks: {},
+  days: {}, events: {}, kidmenus: {}, family: { members: [], prefs: {} }, checks: {},
   tab: 'week', day: null, dayTab: 'all', dish: 0,
   gen: null, db: null, sample: null, me: null, user: null, names: {},
   loaded: false,
@@ -346,6 +367,7 @@ async function boot() {
   const on = (col, fn) => db.collection(col).onSnapshot(snap => { fn(snap); render(); resolveNames(); }, () => {});
   on('days', snap => { S.days = {}; snap.docs.forEach(d => { const v = d.data(); if (v) S.days[d.id] = v; }); });
   on('events', snap => { S.events = {}; snap.docs.forEach(d => { const v = d.data(); if (v) S.events[d.id] = v; }); });
+  on('kidmenus', snap => { S.kidmenus = {}; snap.docs.forEach(d => { const v = d.data(); if (v) S.kidmenus[d.id] = v; }); });
   on('shopping', snap => { S.checks = {}; snap.docs.forEach(d => { const v = d.data(); if (v) S.checks[d.id] = v.checked || {}; }); });
   db.doc('family/main').onSnapshot(snap => { const v = snap.exists ? snap.data() : null; S.family = { members: v?.members || [], prefs: v?.prefs || {} }; render(); }, () => {});
 }
@@ -369,6 +391,14 @@ function evChips(date) {
     const who = memberName(e.who);
     return `<span class="chip${warn}">${who ? esc(who) + '・' : ''}${esc(e.kind)}${e.memo ? '（' + esc(e.memo) + '）' : ''}</span>`;
   }).join('');
+}
+function lunchFor(date) {
+  const out = [];
+  Object.values(S.kidmenus).forEach(doc => { const m = doc.items?.[date]; if (m?.menu) out.push({ who: doc.who, src: doc.source || '給食', menu: m.menu, main: m.main || '' }); });
+  return out;
+}
+function lunchChips(date) {
+  return lunchFor(date).map(l => `<span class="chip lunch"><b>${esc(memberName(l.who) || '子ども')}の${esc(l.src === '給食' ? '給食' : '昼')}</b>${esc(l.menu.split(/[・、,]/).filter(x => !/ごはん|ご飯|パン|牛乳/.test(x)).slice(0, 2).join('・') || l.menu)}</span>`).join('');
 }
 function totalMin(day) { return Math.max(0, ...(day.dishes || []).map(d => +d.min || 0)) ; }
 function flowMin(day) { const s = (day.flow || []).reduce((a, f) => a + (+f.min || 0), 0); return s || totalMin(day); }
@@ -454,7 +484,7 @@ function viewWeek() {
     h += `<button class="day${date === TODAY ? ' today' : ''}" data-act="open" data-date="${date}">
       <span class="dnum${cls}"><span class="dow">${dowOf(date)}</span><span class="dd">${d.getDate()}</span></span>
       <span class="dbody">
-        ${evItems(date).length ? `<span class="chips">${evChips(date)}</span>` : ''}
+        ${evItems(date).length || lunchFor(date).length ? `<span class="chips">${evChips(date)}${lunchChips(date)}</span>` : ''}
         ${main ? `<span class="dmain">${esc(main.name)}</span>${subs ? `<span class="dsubs">${esc(subs)}</span>` : ''}
           <span class="chips">${day.uses?.length ? `<span class="chip gold">残り物 ${day.uses.length}品つかう</span>` : ''}${flowMin(day) ? `<span class="chip min">約${flowMin(day)}分</span>` : ''}</span>`
           : `<span class="dempty">${out ? '夕食なし' : 'まだ決まっていません'}</span>`}
@@ -469,11 +499,17 @@ function viewWeek() {
 }
 
 function viewSched() {
-  let h = `<p class="hint">習い事で帰りが遅い日、お弁当がいる日、給食のメニューなどを入れておくと、AIが時短メニューや作り置きに切り替えます。</p>`;
+  const docs = Object.entries(S.kidmenus).sort((a, b) => String(b[1].month).localeCompare(String(a[1].month)));
+  let h = `<div class="card lunch-card"><h3>子どもの給食・園の献立</h3>
+    <p class="hint">献立表のプリントを撮るか、PDFを選ぶだけで日付ごとに取り込みます。夕食は、その日の昼と同じ料理や食材が続かないように組みます。</p>
+    <button class="btn" data-act="imp-open">${ICON.camera}献立表を読み込む</button>
+    ${docs.length ? `<div class="menus-list">${docs.map(([id, d]) => `<div class="ev"><span class="txt"><span class="who">${esc(memberName(d.who) || '子ども')}</span>${esc(monthLabel(d.month))}の${esc(d.source || '給食')}<small>${Object.keys(d.items || {}).length}日分</small></span><button class="x" data-act="imp-del" data-id="${esc(id)}" aria-label="この献立表を消す">×</button></div>`).join('')}</div>` : ''}
+  </div>
+  <p class="hint">習い事で帰りが遅い日やお弁当がいる日を入れておくと、AIが時短メニューや作り置きに切り替えます。</p>`;
   weekDates().forEach(date => {
     const d = parseD(date); const cls = d.getDay() === 0 ? ' sun' : d.getDay() === 6 ? ' sat' : '';
     h += `<div class="card sched"><span class="dnum${cls}"><span class="dow">${dowOf(date)}</span><span class="dd">${d.getDate()}</span></span>
-      <div class="ev-list">${evItems(date).map((e, i) => `<div class="ev"><span class="txt">${memberName(e.who) ? `<span class="who">${esc(memberName(e.who))}</span>` : ''}${esc(e.kind)}${e.memo ? `<span class="muted">（${esc(e.memo)}）</span>` : ''}</span><button class="x" data-act="ev-del" data-date="${date}" data-i="${i}" aria-label="この予定を消す">×</button></div>`).join('')}
+      <div class="ev-list">${lunchFor(date).length ? `<div class="chips">${lunchChips(date)}</div>` : ''}${evItems(date).map((e, i) => `<div class="ev"><span class="txt">${memberName(e.who) ? `<span class="who">${esc(memberName(e.who))}</span>` : ''}${esc(e.kind)}${e.memo ? `<span class="muted">（${esc(e.memo)}）</span>` : ''}</span><button class="x" data-act="ev-del" data-date="${date}" data-i="${i}" aria-label="この予定を消す">×</button></div>`).join('')}
       <button class="btn small ghost add-ev" data-act="ev-add" data-date="${date}">＋ 予定</button></div></div>`;
   });
   return h;
@@ -544,9 +580,13 @@ function renderOverlay() {
   document.body.style.overflow = 'hidden';
 }
 
+function lunchCard(date) {
+  const ls = lunchFor(date); if (!ls.length) return '';
+  return `<div class="card lunch-day"><span class="sec-title" style="font-size:12px"><span>子どもの昼ごはん</span></span>${ls.map(l => `<p><b>${esc(memberName(l.who) || '子ども')}・${esc(l.src)}</b>${esc(l.menu)}</p>`).join('')}</div>`;
+}
 function dayAll(day, date) {
   const dishes = day.dishes || [];
-  let h = `<ul class="plain card menu-sum">${dishes.map((x, i) => `<li><span class="role">${esc(x.role)}</span><button data-act="goto-dish" data-i="${i}" class="nm" style="border:0;background:none;padding:0;text-align:left;cursor:pointer;font-weight:700;color:var(--ink)">${esc(x.name)}</button><span class="chip min">${x.min ? x.min + '分' : ''}</span></li>`).join('')}</ul>`;
+  let h = lunchCard(date) + `<ul class="plain card menu-sum">${dishes.map((x, i) => `<li><span class="role">${esc(x.role)}</span><button data-act="goto-dish" data-i="${i}" class="nm" style="border:0;background:none;padding:0;text-align:left;cursor:pointer;font-weight:700;color:var(--ink)">${esc(x.name)}</button><span class="chip min">${x.min ? x.min + '分' : ''}</span></li>`).join('')}</ul>`;
   if (day.uses?.length || day.carry?.length) {
     h += `<div class="leftover"><h3>${ICON.loop.replace('<svg', '<svg width="16" height="16"')}食材のつかいまわし</h3>
       ${(day.uses || []).map(u => `<div class="lo-row"><span class="tag">前から</span><span><b>${esc(u.n)}</b> ${esc(u.q || '')} <span class="muted">← ${esc(u.from || '')}</span></span></div>`).join('')}
@@ -702,7 +742,8 @@ function familyText() {
 }
 function eventsText(dates) {
   const ls = dates.map(d => { const it = evItems(d); return it.length ? `- ${d}(${dowOf(d)}): ${it.map(e => (memberName(e.who) || '家族') + '「' + e.kind + (e.memo ? '・' + e.memo : '') + '」').join('、')}` : null; }).filter(Boolean);
-  return '【予定】\n' + (ls.length ? ls.join('\n') : '- 特になし') + '\n（帰りが遅い日は20分以内か作り置き活用。外食・夕食なしの日はdishesを空配列に。お弁当がいる日の前日は弁当に回せるおかずを多めに。給食メモと同じ料理は避ける）';
+  const lu = dates.map(d => { const l = lunchFor(d); return l.length ? `- ${d}(${dowOf(d)}): ${l.map(x => (memberName(x.who) || '子ども') + 'の' + x.src + '「' + x.menu + '」').join('、')}` : null; }).filter(Boolean);
+  return (lu.length ? '【子どもの昼ごはん（給食・園）】夕食では同じ料理・同じ主材料（例:昼がさばなら夜は魚以外）を避け、昼に足りない食材を補う\n' + lu.join('\n') + '\n' : '') + '【予定】\n' + (ls.length ? ls.join('\n') : '- 特になし') + '\n（帰りが遅い日は20分以内か作り置き活用。外食・夕食なしの日はdishesを空配列に。お弁当がいる日の前日は弁当に回せるおかずを多めに。給食メモと同じ料理は避ける）';
 }
 const JSON_RULES = `c(分類)は「肉・魚」「野菜・果物」「卵・豆腐・乳」「主食・乾物」「調味料」「その他」のいずれか。ご飯（白米）は献立に含めない。`;
 
@@ -876,14 +917,151 @@ JSONのみ: {"dish":{"role":"${x.role}","name":"…","min":15,"ing":[{"n":"…",
   });
 }
 
+/* ---------- 献立表の読み込み ---------- */
+const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+const PDFJS_WORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+const monthLabel = m => { const [y, mo] = String(m || '').split('-'); return mo ? Number(mo) + '月' : ''; };
+function loadScript(src) {
+  return new Promise((ok, ng) => { if (document.querySelector(`script[src="${src}"]`) && window.pdfjsLib) return ok(); const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = ng; document.head.appendChild(s); setTimeout(() => ng(new Error('timeout')), 15000); });
+}
+async function pdfToImages(file, max) {
+  await loadScript(PDFJS);
+  const lib = window.pdfjsLib; lib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
+  const pdf = await lib.getDocument({ data: await file.arrayBuffer() }).promise;
+  const out = [];
+  for (let i = 1; i <= Math.min(pdf.numPages, max); i++) {
+    const page = await pdf.getPage(i); const v1 = page.getViewport({ scale: 1 });
+    const vp = page.getViewport({ scale: Math.min(2.5, 2000 / Math.max(v1.width, v1.height)) });
+    const c = document.createElement('canvas'); c.width = vp.width; c.height = vp.height;
+    const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+    await page.render({ canvasContext: ctx, viewport: vp }).promise;
+    out.push(await new Promise(r => c.toBlob(r, 'image/jpeg', .9)));
+  }
+  return out;
+}
+async function toJpeg(file) {
+  const bmp = await createImageBitmap(file);
+  const k = Math.min(1, 2400 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  return new Promise(r => c.toBlob(r, 'image/jpeg', .9));
+}
+async function prepareImages(files) {
+  const lim = (await S.sample.limits().catch(() => null))?.images;
+  if (!lim) throw { code: 'no_images' };
+  const max = lim.maxCount || 4, types = lim.mediaTypes || ['image/jpeg', 'image/png'];
+  const out = [];
+  for (const f of files) {
+    if (out.length >= max) break;
+    if (f.type === 'application/pdf' || /\.pdf$/i.test(f.name)) out.push(...await pdfToImages(f, max - out.length));
+    else if (types.includes(f.type) && f.size <= (lim.maxInputBytes || Infinity)) out.push(f);
+    else out.push(await toJpeg(f));
+  }
+  return out.slice(0, max);
+}
+const IMP = { files: [], rows: null, who: [], source: '給食', busy: false };
+function sheetImport() {
+  const kids = S.family.members.filter(m => m.kind === '子ども');
+  if (!kids.length) {
+    openSheet(`<h3>先にお子さんを登録してください</h3><p class="hint">献立表をだれのものとして取り込むかを選ぶため、「家族」タブでお子さんを登録してから読み込みます。</p><button class="btn block" data-act="tab" data-tab="family">家族を登録する</button>`);
+    return;
+  }
+  IMP.files = []; IMP.rows = null; IMP.busy = false;
+  if (!IMP.who.length || !IMP.who.every(id => kids.some(k => k.id === id))) IMP.who = [kids[0].id];
+  renderImport();
+}
+function renderImport() {
+  const kids = S.family.members.filter(m => m.kind === '子ども');
+  if (IMP.rows) {
+    const whoNames = IMP.who.map(memberName).join('・');
+    openSheet(`<h3>${esc(whoNames)}の${esc(IMP.source)}（${IMP.rows.length}日分）</h3>
+      <p class="hint">読み取った内容です。違うところは直してから保存してください。</p>
+      <form id="imp-save" style="display:grid;gap:8px">
+        ${IMP.rows.map((r, i) => `<div class="lrow"><span class="d">${md(r.date)}<small>${dowOf(r.date)}</small></span><input class="inp" id="lr-${i}" name="m${i}" value="${esc(r.menu)}" aria-label="${md(r.date)}の献立"><button type="button" class="x" data-act="imp-row-del" data-i="${i}" aria-label="この日を外す">×</button></div>`).join('')}
+        <button class="btn block" type="submit" style="margin-top:6px">${IMP.rows.length}日分を保存</button>
+        <button class="btn ghost block" type="button" data-act="imp-open">読み込み直す</button>
+      </form>`, el => {
+      el.querySelector('form').addEventListener('submit', e => { e.preventDefault(); const f = new FormData(e.target); IMP.rows.forEach((r, i) => r.menu = String(f.get('m' + i) || '').trim()); saveImport(); });
+    });
+    return;
+  }
+  openSheet(`<h3>献立表を読み込む</h3>
+    <form id="imp-form" style="display:grid;gap:14px">
+      <div><span class="hint">だれの献立表？（同じ学校のきょうだいはまとめて選べます）</span><div class="opt" style="margin-top:6px">${kids.map(k => `<input type="checkbox" name="who" id="iw-${k.id}" value="${k.id}" ${IMP.who.includes(k.id) ? 'checked' : ''}><label for="iw-${k.id}">${esc(k.name)}</label>`).join('')}</div></div>
+      <div><span class="hint">種類</span><div class="opt" style="margin-top:6px">${['給食', '保育園', '幼稚園'].map(t => `<input type="radio" name="src" id="is-${t}" value="${t}" ${IMP.source === t ? 'checked' : ''}><label for="is-${t}">${t}</label>`).join('')}</div></div>
+      <label class="drop" for="imp-file">${ICON.camera}<span>写真を撮る・PDFを選ぶ</span><span class="hint">表と裏など、複数枚まとめて選べます</span>
+        <input type="file" id="imp-file" accept="image/*,application/pdf" multiple></label>
+      <div class="files" id="imp-files"></div>
+      <button class="btn block" type="submit" id="imp-go" ${S.sample ? '' : 'disabled'}>${ICON.spark}AIで読み取る</button>
+      <ul class="plain prog" id="imp-prog" hidden></ul>
+    </form>`, el => {
+    const inp = el.querySelector('#imp-file');
+    const showFiles = () => {
+      el.querySelector('#imp-files').innerHTML = IMP.files.map(f => /pdf/.test(f.type) || /\.pdf$/i.test(f.name) ? '<span class="pdf">PDF</span>' : `<img alt="" src="${URL.createObjectURL(f)}">`).join('');
+      el.querySelector('#imp-go').disabled = !IMP.files.length || !S.sample;
+    };
+    inp.addEventListener('change', () => { IMP.files = [...IMP.files, ...inp.files]; inp.value = ''; showFiles(); });
+    showFiles();
+    el.querySelector('form').addEventListener('submit', e => {
+      e.preventDefault(); const f = new FormData(e.target);
+      IMP.who = f.getAll('who'); IMP.source = f.get('src') || '給食';
+      if (!IMP.who.length) { toast('だれの献立表かを選んでください'); return; }
+      readImport();
+    });
+  });
+}
+async function readImport() {
+  if (IMP.busy || !IMP.files.length) return;
+  IMP.busy = true;
+  const prog = document.getElementById('imp-prog'), go = document.getElementById('imp-go');
+  const step = (a, b) => { if (prog) { prog.hidden = false; prog.innerHTML = `<li><span class="dot ${a}"></span><span>写真・PDFを準備</span></li><li><span class="dot ${b}"></span><span>AIが献立を読み取る</span></li>`; } };
+  if (go) go.disabled = true;
+  step('run', '');
+  try {
+    const images = await prepareImages(IMP.files);
+    step('ok', 'run');
+    const r = await S.sample.json(`画像は子どもの${IMP.source}の献立表（1か月分または1週間分）です。日付ごとの献立を読み取ってください。
+今日は${TODAY}です。献立表に年が書かれていなければ、今日に最も近い年にしてください。
+- menuはその日の料理名を「・」区切りで。牛乳など毎日同じ飲み物は省く。
+- mainはその日のおかずの主な食材（さば、豚肉、鶏肉、卵など）を1〜2語で。
+- 休日・行事などで食事がない日は含めない。読めない部分は推測せず省く。
+JSONのみで答える: {"days":[{"date":"YYYY-MM-DD","menu":"ごはん・さばのみそ煮・ごま和え・豚汁","main":"さば"}]}`, { images, modelTier: 'default' });
+    const rows = (Array.isArray(r?.days) ? r.days : []).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d?.date) && d.menu).map(d => ({ date: d.date, menu: String(d.menu), main: String(d.main || '') })).sort((a, b) => a.date.localeCompare(b.date));
+    if (!rows.length) throw { code: 'empty' };
+    IMP.rows = rows; IMP.busy = false; renderImport();
+  } catch (e) {
+    IMP.busy = false; step('ng', 'ng'); if (go) go.disabled = false;
+    toast(e?.code === 'empty' ? '献立が見つかりませんでした。献立表全体が写るように撮り直してください'
+      : e?.code === 'no_images' ? 'この画面では写真を読み取れません。claude.aiのアプリかブラウザで開いてください'
+      : e?.name === 'InvalidStateError' || e?.name === 'EncodingError' ? 'この写真の形式を読み込めませんでした。JPEGかPNGで撮り直してください'
+      : e?.code ? aiError(e) : 'ファイルを読み込めませんでした。別の写真かPDFでお試しください');
+  }
+}
+async function saveImport() {
+  const rows = IMP.rows.filter(r => r.menu);
+  const byMonth = {};
+  rows.forEach(r => { (byMonth[r.date.slice(0, 7)] ||= {})[r.date] = { menu: r.menu, main: r.main }; });
+  const writes = [];
+  IMP.who.forEach(who => Object.entries(byMonth).forEach(([month, items]) => {
+    const id = who + '_' + month + '_' + IMP.source;
+    const prev = S.kidmenus[id]?.items || {};
+    const doc = { who, month, source: IMP.source, items: { ...prev, ...items }, updatedAt: Date.now() };
+    S.kidmenus[id] = doc; writes.push(put('kidmenus/' + id, doc));
+  }));
+  closeSheet(); render();
+  await Promise.all(writes);
+  toast(`${rows.length}日分の${IMP.source}を保存しました`);
+  IMP.rows = null; IMP.files = [];
+}
+
 /* ---------- events ---------- */
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-act]'); if (!t) return;
   const a = t.dataset.act;
-  if (a === 'sheet-bg') { if (e.target === t && !S.gen) closeSheet(); return; }
+  if (a === 'sheet-bg') { if (e.target === t && !S.gen && !IMP.busy) closeSheet(); return; }
   if (a === 'check') return;
   switch (a) {
-    case 'tab': S.tab = t.dataset.tab; S.day = null; try { localStorage.setItem('kondate.tab', S.tab); } catch (err) {} render(); window.scrollTo(0, 0); break;
+    case 'tab': closeSheet(); S.tab = t.dataset.tab; S.day = null; try { localStorage.setItem('kondate.tab', S.tab); } catch (err) {} render(); window.scrollTo(0, 0); break;
     case 'wk': S.week = addDays(S.week, +t.dataset.n); render(); break;
     case 'open': S.day = t.dataset.date; S.dayTab = 'all'; S.dish = 0; render(); break;
     case 'close-day': S.day = null; render(); break;
@@ -903,6 +1081,10 @@ document.addEventListener('click', e => {
     case 'mem-edit': sheetMember(t.dataset.id); break;
     case 'mem-del': S.family.members = S.family.members.filter(m => m.id !== t.dataset.id); saveFamily(); closeSheet(); break;
     case 'copy-shop': copyShop(); break;
+    case 'imp-open': if (IMP.rows && t.closest('#imp-save')) IMP.rows = null; sheetImport(); break;
+    case 'imp-row-del': { const f = document.getElementById('imp-save'); if (f) { const fd = new FormData(f); IMP.rows.forEach((r, i) => r.menu = String(fd.get('m' + i) || '').trim()); } IMP.rows.splice(+t.dataset.i, 1); renderImport(); break; }
+    case 'imp-del': { const id = t.dataset.id, d = S.kidmenus[id]; openSheet(`<h3>${esc(memberName(d?.who) || '子ども')}の${esc(monthLabel(d?.month))}の${esc(d?.source || '給食')}を消しますか？</h3><button class="btn danger block" data-act="imp-del-ok" data-id="${esc(id)}">消す</button><button class="btn ghost block" data-act="sheet-close">やめる</button>`); break; }
+    case 'imp-del-ok': { const id = t.dataset.id; delete S.kidmenus[id]; render(); closeSheet(); if (S.db) S.db.doc('kidmenus/' + id).delete().catch(() => toast('削除できませんでした')); break; }
   }
 });
 document.addEventListener('change', e => {
