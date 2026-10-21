@@ -509,65 +509,265 @@ function renderView() {
 }
 
 /* ---------- 献立のイメージ図 ---------- */
+// 料理名と材料から料理の種類を判定し、種類ごとに上から見た盛り付けを描く
 function rng(seed) { let h = 2166136261; for (const ch of String(seed)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return () => ((h = Math.imul(h ^ (h >>> 15), 2246822507) ^ Math.imul(h ^ (h >>> 13), 3266489909)) >>> 0) / 4294967296; }
-function foodLook(x) {
-  const t = (x?.name || '') + ' ' + (x?.ing || []).map(i => i.n).join(' ');
-  const has = re => re.test(t);
-  let base = '#d9b98a', sauce = null;
-  if (has(/カレー/)) base = '#b8792b';
-  else if (has(/鮭|サーモン|ちゃんちゃん/)) base = '#ef8f6a';
-  else if (has(/さば|鯖|ぶり|魚|たら|さんま|あじ/)) base = '#a28d77';
-  else if (has(/ハンバーグ|ひき肉|ミート|そぼろ/)) { base = '#7b4a30'; sauce = '#4f2516'; }
-  else if (has(/お好み焼き/)) { base = '#d39a55'; sauce = '#5a2c18'; }
-  else if (has(/肉じゃが|じゃがいも|ポテト/)) base = '#e2c27a';
-  else if (has(/豚|牛/)) base = '#b07a52';
-  else if (has(/鶏|チキン|から揚げ|唐揚げ/)) base = '#e4b36f';
-  else if (has(/しりしり|にんじん/)) base = '#ec8a3a';
-  else if (has(/もやし/)) base = '#efe6c8';
-  else if (has(/トマト/) && x.role !== '汁物') base = '#d9573f';
-  else if (has(/小松菜|ほうれん草|ブロッコリー|きゅうり|ピーマン|キャベツ|レタス|サラダ|おひたし|ナムル|和え/)) base = '#6aa84f';
-  else if (has(/卵|たまご/)) base = '#f1c94a';
-  if (x.role === '汁物') {
-    base = has(/みそ|味噌/) ? '#c79a5d' : has(/トマト/) ? '#d9774f' : has(/コーン|ポタージュ|牛乳/) ? '#f0d579' : has(/すまし/) ? '#e6d29a' : '#e5c27a';
-  }
-  const gar = [];
-  if (has(/ねぎ|小松菜|わかめ|ピーマン|きゅうり|ブロッコリー|ほうれん草|青のり/)) gar.push('#3f7f35');
-  if (has(/にんじん|トマト|パプリカ/)) gar.push('#e8742f');
-  if (has(/豆腐|ご飯|ポテト|もやし|マヨ/)) gar.push('#fbf7ea');
-  if (has(/卵|コーン/)) gar.push('#f6cf3c');
-  if (has(/しめじ|えのき|しいたけ|きのこ/)) gar.push('#d8c3a0');
-  return { base, sauce, gar };
+const shade = (hex, a) => { const n = parseInt(hex.slice(1), 16); const f = v => Math.max(0, Math.min(255, Math.round(a < 0 ? v * (1 + a) : v + (255 - v) * a))); return '#' + [n >> 16, n >> 8 & 255, n & 255].map(v => f(v).toString(16).padStart(2, '0')).join(''); };
+const dishText = x => (x?.name || '') + ' ' + (x?.ing || []).map(i => i.n).join(' ');
+function mainType(x) {
+  const t = dishText(x), n = x?.name || '';
+  if (/カレー|ハヤシ|丼|どんぶり|オムライス|チャーハン|炒飯|ビビンバ|タコライス|ロコモコ/.test(n)) return 'curry';
+  if (/から揚げ|からあげ|唐揚げ|竜田|フライドチキン|チキン南蛮/.test(n)) return 'karaage';
+  if (/コロッケ|メンチ|とんかつ|カツ|フライ/.test(n)) return 'korokke';
+  if (/ハンバーグ|つくね|ミートボール|肉団子/.test(n)) return 'hamburg';
+  if (/お好み焼き|チヂミ|ピザ/.test(n)) return 'okonomi';
+  if (/肉じゃが|煮物|筑前煮|煮込み|おでん|シチュー/.test(n)) return 'nimono';
+  if (/パスタ|スパゲ|うどん|そば|焼きそば|ラーメン|麺/.test(n)) return 'noodle';
+  if (/鮭|サーモン|さば|鯖|ぶり|たら|さんま|あじ|いわし|かじき|魚|ちゃんちゃん/.test(n)) return 'fish';
+  if (/餃子|ぎょうざ|春巻/.test(n)) return 'gyoza';
+  if (/卵焼き|オムレツ|だし巻/.test(n)) return 'tamago';
+  if (/鶏|チキン|豚|牛|ステーキ|焼き|ソテー|照り/.test(t) && /焼き|ソテー|照り|ステーキ|塩/.test(n)) return 'grill';
+  return 'stirfry';
 }
-function blob(cx, cy, rx, ry, look, r) {
-  let o = `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${look.base}"/>`;
-  for (let k = 0; k < 7; k++) { const a = r() * 6.28, d = r() * .55; o += `<ellipse cx="${(cx + Math.cos(a) * rx * d).toFixed(1)}" cy="${(cy + Math.sin(a) * ry * d).toFixed(1)}" rx="${(rx * (.35 + r() * .3)).toFixed(1)}" ry="${(ry * (.35 + r() * .3)).toFixed(1)}" fill="${look.base}" opacity=".9"/>`; }
-  if (look.sauce) o += `<ellipse cx="${cx}" cy="${cy - ry * .1}" rx="${rx * .55}" ry="${ry * .45}" fill="${look.sauce}" opacity=".85"/>`;
-  for (let k = 0; k < 14 && look.gar.length; k++) { const a = r() * 6.28, d = Math.sqrt(r()) * .75; o += `<circle cx="${(cx + Math.cos(a) * rx * d).toFixed(1)}" cy="${(cy + Math.sin(a) * ry * d).toFixed(1)}" r="${(1.6 + r() * 2.2).toFixed(1)}" fill="${look.gar[k % look.gar.length]}"/>`; }
-  o += `<ellipse cx="${cx - rx * .3}" cy="${cy - ry * .35}" rx="${rx * .25}" ry="${ry * .12}" fill="#fff" opacity=".18"/>`;
-  return o;
+function sideType(x) {
+  const n = x?.name || '', t = dishText(x);
+  if (/ポテト|ポテサラ|マカロニ/.test(n)) return 'potato';
+  if (/コールスロー/.test(n)) return 'coleslaw';
+  if (/しりしり|きんぴら/.test(n)) return 'shirishiri';
+  if (/サラダ|マリネ/.test(n)) return 'salad';
+  if (/卵焼き|だし巻|オムレツ|スクランブル/.test(n)) return 'tamago';
+  if (/おひたし|和え|ナムル|ごま|煮びたし|お浸し/.test(n) || /ほうれん草|小松菜|春菊|ブロッコリー|いんげん/.test(t)) return 'greens';
+  if (/冷奴|豆腐/.test(n)) return 'tofu';
+  return 'mix';
 }
-function trayArt(day) {
+function soupType(x) {
+  const t = dishText(x), n = x?.name || '';
+  if (/豚汁|とん汁/.test(n)) return ['#b07d48', 'tonjiru'];
+  if (/みそ|味噌/.test(t)) return ['#b98a52', 'miso'];
+  if (/コーン|ポタージュ|クリーム|牛乳/.test(t)) return ['#efcf72', 'potage'];
+  if (/トマト|ミネストローネ/.test(t)) return ['#d0593b', 'tomato'];
+  if (/すまし|吸い物/.test(n)) return ['#dcbf7e', 'clear'];
+  if (/中華|鶏がら|わかめスープ|卵スープ/.test(t)) return ['#d8b465', 'clear'];
+  return ['#d7a956', 'clear'];
+}
+function trayArt(day, opts = {}) {
   const ds = day?.dishes || [];
-  const pick = role => ds.find(x => x.role === role);
-  const main = pick('主菜') || ds[0], side = ds.find(x => x.role === '副菜' && x !== main) || ds.find(x => x !== main && x.role !== '汁物'), soup = pick('汁物');
-  const r = rng(day?.date + (main?.name || ''));
-  let g = `<rect x="4" y="4" width="312" height="196" rx="16" fill="#b8844f"/><rect x="10" y="10" width="300" height="184" rx="12" fill="#c99560"/>`;
-  for (let k = 0; k < 6; k++) { const y = 22 + k * 30 + r() * 8; g += `<path d="M14 ${y.toFixed(1)} C 100 ${(y - 6).toFixed(1)}, 210 ${(y + 7).toFixed(1)}, 306 ${(y - 2).toFixed(1)}" stroke="#b07f4c" stroke-width="1.4" fill="none" opacity=".55"/>`; }
-  // 主菜: 大皿
-  g += `<ellipse cx="128" cy="72" rx="96" ry="52" fill="#000" opacity=".12"/><ellipse cx="126" cy="68" rx="96" ry="52" fill="#f4f0e6"/><ellipse cx="126" cy="68" rx="80" ry="42" fill="#ebe5d6"/>`;
-  if (main) g += blob(126, 68, 60, 30, foodLook(main), r);
-  // 副菜: 小鉢
-  g += `<circle cx="262" cy="66" r="40" fill="#000" opacity=".12"/><circle cx="260" cy="63" r="40" fill="#2f4a68"/><circle cx="260" cy="63" r="32" fill="#e9e2d2"/>`;
-  if (side) g += blob(260, 63, 24, 20, foodLook(side), r);
-  // ごはん
-  g += `<circle cx="78" cy="152" r="38" fill="#000" opacity=".12"/><circle cx="76" cy="149" r="38" fill="#f6f2e8"/><circle cx="76" cy="149" r="30" fill="#fffdf7"/>`;
-  for (let k = 0; k < 22; k++) { const a = r() * 6.28, d = Math.sqrt(r()) * 24; g += `<ellipse cx="${(76 + Math.cos(a) * d).toFixed(1)}" cy="${(149 + Math.sin(a) * d).toFixed(1)}" rx="3" ry="1.6" transform="rotate(${(r() * 180).toFixed(0)} ${(76 + Math.cos(a) * d).toFixed(1)} ${(149 + Math.sin(a) * d).toFixed(1)})" fill="#ece6d6"/>`; }
-  // 汁物: 汁椀
-  g += `<circle cx="236" cy="154" r="38" fill="#000" opacity=".12"/><circle cx="234" cy="151" r="38" fill="#5e1c18"/><circle cx="234" cy="151" r="31" fill="#3e110e"/>`;
-  if (soup) { const lk = foodLook(soup); g += `<circle cx="234" cy="151" r="28" fill="${lk.base}"/>`; for (let k = 0; k < 10 && lk.gar.length; k++) { const a = r() * 6.28, d = Math.sqrt(r()) * 20; g += `<circle cx="${(234 + Math.cos(a) * d).toFixed(1)}" cy="${(151 + Math.sin(a) * d).toFixed(1)}" r="${(2 + r() * 2.5).toFixed(1)}" fill="${lk.gar[k % lk.gar.length]}"/>`; } }
+  const r = rng((day?.date || '') + ds.map(x => x.name).join());
+  const id = 'a' + Math.floor(r() * 1e9).toString(36) + (trayArt.n = (trayArt.n || 0) + 1);
+  const defs = new Map();
+  const G = (c, kind = 'r') => { const k = kind + c; if (!defs.has(k)) { const gid = id + defs.size; defs.set(k, kind === 'r'
+    ? `<radialGradient id="${gid}" cx=".4" cy=".35" r=".75"><stop offset="0" stop-color="${shade(c, .35)}"/><stop offset=".55" stop-color="${c}"/><stop offset="1" stop-color="${shade(c, -.3)}"/></radialGradient>`
+    : `<radialGradient id="${gid}" cx=".5" cy=".5" r=".55"><stop offset="0" stop-color="${shade(c, .18)}"/><stop offset=".8" stop-color="${c}"/><stop offset="1" stop-color="${shade(c, -.35)}"/></radialGradient>`); }
+    return `url(#${defs.get(k).match(/id="([^"]+)"/)[1]})`; };
+  const f1 = v => v.toFixed(1);
+  const bumpy = (cx, cy, rx, ry, n = 9, amp = .22, rot = r() * 6.28) => {
+    const p = [...Array(n)].map((_, i) => { const a = rot + i / n * 6.283, k = 1 + (r() - .5) * amp; return [cx + Math.cos(a) * rx * k, cy + Math.sin(a) * ry * k]; });
+    const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+    let d = `M${mid(p[n - 1], p[0]).map(f1)}`; p.forEach((pt, i) => { const m = mid(pt, p[(i + 1) % n]); d += ` Q${f1(pt[0])} ${f1(pt[1])} ${f1(m[0])} ${f1(m[1])}`; });
+    return d + 'Z';
+  };
+  const piece = (cx, cy, rx, ry, c, amp = .25, n = 9) => `<path d="${bumpy(cx, cy, rx, ry, n, amp)}" fill="${G(c)}"/>`;
+  const hl = (cx, cy, rx, ry, o = .35) => `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="#fff" opacity="${o}"/>`;
+  const inE = (cx, cy, rx, ry, k = 1) => { const a = r() * 6.283, d = Math.sqrt(r()) * k; return [cx + Math.cos(a) * rx * d, cy + Math.sin(a) * ry * d]; };
+  const dots = (cx, cy, rx, ry, c, n, s) => { let o = ''; for (let i = 0; i < n; i++) { const [x, y] = inE(cx, cy, rx, ry); o += `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(s * (.6 + r() * .6))}" fill="${c}"/>`; } return o; };
+  const strands = (cx, cy, rx, ry, c, n, len, w, ang = null) => { let o = ''; for (let i = 0; i < n; i++) { const [x, y] = inE(cx, cy, rx, ry, .9); const a = ang == null ? r() * 6.28 : ang + (r() - .5) * .5; const l = len * (.6 + r() * .6); o += `<path d="M${f1(x - Math.cos(a) * l / 2)} ${f1(y - Math.sin(a) * l / 2)} q${f1(Math.cos(a + 1.2) * l * .15)} ${f1(Math.sin(a + 1.2) * l * .15)} ${f1(Math.cos(a) * l)} ${f1(Math.sin(a) * l)}" stroke="${c}" stroke-width="${w}" stroke-linecap="round" fill="none"/>`; } return o; };
+  const leaf = (cx, cy, s, c, rot) => `<g transform="translate(${f1(cx)} ${f1(cy)}) rotate(${f1(rot)})"><path d="M${-s} 0 Q${-s * .3} ${-s * .75} ${s} 0 Q${-s * .3} ${s * .75} ${-s} 0Z" fill="${G(c)}"/><path d="M${-s * .85} 0 L${s * .8} 0" stroke="${shade(c, .45)}" stroke-width="1" opacity=".7"/></g>`;
+  const lettuce = (cx, cy, s) => { let o = ''; for (let i = 0; i < 3; i++) o += `<path d="${bumpy(cx + (i - 1) * s * .5, cy + (r() - .5) * s * .3, s * .7, s * .5, 14, .35)}" fill="${G(i % 2 ? '#8cc152' : '#6fae3e')}"/>`; return o; };
+  const lemon = (cx, cy, s, rot) => `<g transform="translate(${f1(cx)} ${f1(cy)}) rotate(${f1(rot)})"><path d="M${-s} 0 A${s} ${s} 0 0 1 ${s} 0Z" fill="#f4d03f"/><path d="M${-s * .82} -1 A${s * .82} ${s * .82} 0 0 1 ${s * .82} -1Z" fill="#fbe98c"/>${[.25, .5, .75].map(k => `<path d="M0 -1 L${f1(Math.cos(Math.PI * (1 + k)) * s * .8)} ${f1(Math.sin(Math.PI * (1 + k)) * s * .8)}" stroke="#f4d03f" stroke-width="1"/>`).join('')}</g>`;
+  const tomatoW = (cx, cy, s, rot) => `<g transform="translate(${f1(cx)} ${f1(cy)}) rotate(${f1(rot)})"><path d="M${-s} 0 A${s} ${s * .9} 0 0 1 ${s} 0Z" fill="${G('#d93a2b')}"/><path d="M${-s * .6} -2 A${s * .6} ${s * .45} 0 0 1 ${s * .6} -2Z" fill="#f2836b"/>${dots(0, -s * .3, s * .4, s * .15, '#f7d36b', 4, 1.1)}</g>`;
+  const egg = (cx, cy, s) => `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${s}" ry="${f1(s * .8)}" fill="#fbfaf3" stroke="#e8e2cf" stroke-width=".8"/><circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(s * .45)}" fill="${G('#f5b72a')}"/>`;
+  const broc = (cx, cy, s) => { let o = `<path d="M${f1(cx)} ${f1(cy)} l${f1(s * .2)} ${f1(s * .9)}" stroke="#9bc46a" stroke-width="${f1(s * .45)}" stroke-linecap="round"/>`; for (let i = 0; i < 6; i++) { const [x, y] = inE(cx, cy - s * .1, s * .65, s * .55); o += `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(s * (.35 + r() * .15))}" fill="${G('#3f8a2e')}"/>`; } return o; };
+  const cuke = (cx, cy, s) => `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${s}" fill="#4f8a3a"/><circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(s * .8)}" fill="#e3efc6"/>${dots(cx, cy, s * .35, s * .35, '#c8dc9a', 3, .9)}`;
+  const carrotP = (cx, cy, s) => `<rect x="${f1(cx - s)}" y="${f1(cy - s * .6)}" width="${f1(s * 2)}" height="${f1(s * 1.2)}" rx="${f1(s * .5)}" fill="${G('#ec7a2c')}" transform="rotate(${f1(r() * 180)} ${f1(cx)} ${f1(cy)})"/>`;
+  const cube = (cx, cy, s, c) => `<rect x="${f1(cx - s / 2)}" y="${f1(cy - s / 2)}" width="${s}" height="${s}" rx="${f1(s * .18)}" fill="${G(c)}" transform="rotate(${f1(r() * 90)} ${f1(cx)} ${f1(cy)})"/>`;
+  const has = (x, re) => re.test(dishText(x));
+  const ingColors = x => {
+    const out = [];
+    const add = (re, c, kind) => { if (has(x, re)) out.push([c, kind]); };
+    add(/豚|ベーコン/, '#c98f6e', 'strip'); add(/牛/, '#7d4026', 'strip'); add(/鶏/, '#e3b07a', 'chunk'); add(/ひき肉/, '#8a5233', 'crumb');
+    add(/ピーマン|ほうれん草|小松菜|ニラ|にら|ブロッコリー|いんげん|チンゲン/, '#3f8a2e', 'chunk'); add(/キャベツ|白菜/, '#cfe3a6', 'leafy');
+    add(/にんじん|人参/, '#ec7a2c', 'strip'); add(/玉ねぎ|もやし|大根/, '#f1ead2', 'strip'); add(/卵|たまご/, '#f5c842', 'fluffy');
+    add(/厚揚げ|豆腐/, '#e2b25a', 'chunk'); add(/なす/, '#5b3a6e', 'chunk'); add(/しめじ|えのき|しいたけ|きのこ|まいたけ/, '#cdb08a', 'chunk'); add(/かぼちゃ/, '#e39b2a', 'chunk'); add(/じゃがいも/, '#ead08a', 'chunk');
+    return out.length ? out : [['#c98f6e', 'strip'], ['#3f8a2e', 'chunk']];
+  };
+  const mixed = (x, cx, cy, rx, ry, sauce) => {
+    let o = sauce ? `<path d="${bumpy(cx, cy, rx * .8, ry * .75, 12, .2)}" fill="${sauce}" opacity=".3"/>` : '';
+    const cs = ingColors(x);
+    for (let i = 0; i < 24; i++) { const [c, k] = cs[i % cs.length]; const [px, py] = inE(cx, cy, rx * .75, ry * .7);
+      if (k === 'strip') o += `<rect x="${f1(px - 11)}" y="${f1(py - 4)}" width="22" height="8" rx="4" fill="${G(c)}" transform="rotate(${f1(r() * 180)} ${f1(px)} ${f1(py)})"/>`;
+      else if (k === 'leafy') o += `<path d="${bumpy(px, py, 12, 9, 8, .5)}" fill="${G(c)}"/>`;
+      else if (k === 'fluffy') o += `<path d="${bumpy(px, py, 10, 8, 8, .5)}" fill="${G(c)}"/>`;
+      else if (k === 'crumb') o += dots(px, py, 6, 6, c, 4, 2.8);
+      else o += piece(px, py, 10, 8, c, .35, 7); }
+    return o + hl(cx - rx * .3, cy - ry * .4, rx * .3, ry * .12, .2);
+  };
+  // ---- 主菜 ----
+  const drawMain = (x, cx, cy, rx, ry) => {
+    const t = mainType(x); let o = '';
+    if (t === 'karaage') {
+      o += lettuce(cx - rx * .45, cy - ry * .35, ry * .55);
+      const pos = [[-.15, .05], [.2, -.05], [.05, .4], [-.4, .35], [.45, .3], [-.05, -.35], [.35, -.42]];
+      pos.forEach(([a, b]) => { const px = cx + a * rx, py = cy + b * ry; o += `<path d="${bumpy(px, py, rx * .2, ry * .3, 11, .45)}" fill="${G('#c27428')}"/>` + dots(px, py, rx * .14, ry * .2, '#e8b25a', 5, 1.4) + dots(px, py, rx * .14, ry * .2, '#8c4a16', 3, 1.2); });
+      o += lemon(cx + rx * .7, cy + ry * .05, ry * .28, -70);
+      if (has(x, /キムチ/)) o += piece(cx + rx * .62, cy - ry * .45, rx * .14, ry * .18, '#cf3b26', .5);
+    } else if (t === 'hamburg') {
+      o += piece(cx - rx * .15, cy, rx * .62, ry * .8, '#6e3d22', .12, 10);
+      o += `<path d="${bumpy(cx - rx * .15, cy - ry * .05, rx * .48, ry * .6, 10, .18)}" fill="${G('#4a1c0e')}"/>` + hl(cx - rx * .3, cy - ry * .35, rx * .22, ry * .08, .4);
+      o += broc(cx + rx * .58, cy - ry * .25, ry * .22) + carrotP(cx + rx * .62, cy + ry * .3, ry * .16) + carrotP(cx + rx * .45, cy + ry * .5, ry * .14);
+    } else if (t === 'fish') {
+      const salmon = has(x, /鮭|サーモン|ちゃんちゃん/), c = salmon ? '#ef8a5e' : has(x, /ぶり|かじき/) ? '#c9926e' : '#a8977f';
+      if (has(x, /ちゃんちゃん|キャベツ/)) o += strands(cx, cy, rx * .85, ry * .75, '#cfe3a6', 40, 22, 4) + strands(cx, cy, rx * .7, ry * .6, '#ec7a2c', 8, 14, 2.5);
+      const fx = cx - rx * .05, fy = cy;
+      o += `<path d="M${f1(fx - rx * .55)} ${f1(fy - ry * .25)} Q${f1(fx - rx * .1)} ${f1(fy - ry * .62)} ${f1(fx + rx * .5)} ${f1(fy - ry * .3)} Q${f1(fx + rx * .62)} ${f1(fy + ry * .1)} ${f1(fx + rx * .45)} ${f1(fy + ry * .42)} Q${f1(fx - rx * .05)} ${f1(fy + ry * .62)} ${f1(fx - rx * .5)} ${f1(fy + ry * .32)} Q${f1(fx - rx * .66)} ${f1(fy)} ${f1(fx - rx * .55)} ${f1(fy - ry * .25)}Z" fill="${G(c)}" stroke="${shade(c, -.45)}" stroke-width="3"/>`;
+      if (salmon) for (let i = 0; i < 5; i++) o += `<path d="M${f1(fx - rx * .4 + i * rx * .19)} ${f1(fy - ry * .45)} q${f1(-rx * .08)} ${f1(ry * .45)} ${f1(rx * .02)} ${f1(ry * .85)}" stroke="#ffd5bd" stroke-width="2.2" fill="none" opacity=".8"/>`;
+      for (let i = 0; i < 3; i++) o += `<path d="M${f1(fx - rx * .3 + i * rx * .28)} ${f1(fy - ry * .35)} l${f1(rx * .14)} ${f1(ry * .7)}" stroke="#5a2e14" stroke-width="2.5" opacity=".45" stroke-linecap="round"/>`;
+      if (has(x, /みそ|味噌/)) o += dots(fx, fy, rx * .35, ry * .3, '#9a6a2e', 10, 2.6);
+      if (has(x, /バター/)) o += `<rect x="${f1(fx - 6)}" y="${f1(fy - 6)}" width="12" height="10" rx="2" fill="#f7e08a"/>`;
+      if (!has(x, /ちゃんちゃん|キャベツ/)) o += leaf(cx + rx * .62, cy - ry * .25, ry * .3, '#3f8a2e', -30) + piece(cx + rx * .64, cy + ry * .3, rx * .12, ry * .16, '#f7f4ea', .4);
+    } else if (t === 'curry') {
+      const isCurry = has(x, /カレー|ハヤシ/);
+      o += `<path d="${bumpy(cx - rx * .38, cy, rx * .48, ry * .7, 13, .15)}" fill="${G('#fdfbf3')}"/>` + strands(cx - rx * .38, cy, rx * .4, ry * .6, '#ebe4d0', 30, 5, 2.2);
+      if (isCurry) {
+        o += `<path d="${bumpy(cx + rx * .25, cy + ry * .05, rx * .62, ry * .78, 12, .18)}" fill="${G(has(x, /ハヤシ/) ? '#5e2614' : '#a65619')}"/>`;
+        const cs = [['#ead08a', /じゃが/], ['#ec7a2c', /にんじん|人参/], ['#7a3e22', /肉|豚|牛|鶏/], ['#e39b2a', /かぼちゃ/], ['#3f8a2e', /ピーマン|ほうれん草|ブロッコリー/]].filter(([, re]) => has(x, re));
+        (cs.length ? cs : [['#ead08a'], ['#ec7a2c'], ['#7a3e22']]).forEach(([c]) => { for (let i = 0; i < 3; i++) { const [px, py] = inE(cx + rx * .3, cy + ry * .05, rx * .4, ry * .55); o += piece(px, py, rx * .08, ry * .12, c, .3, 6); } });
+        o += hl(cx + rx * .1, cy - ry * .35, rx * .22, ry * .06, .3);
+      } else o += mixed(x, cx + rx * .25, cy, rx * .55, ry * .7, '#9a5a24');
+    } else if (t === 'korokke') {
+      o += strands(cx + rx * .35, cy - ry * .1, rx * .45, ry * .6, '#d6e8ac', 45, 24, 3.2) + strands(cx + rx * .35, cy - ry * .1, rx * .35, ry * .5, '#b9d67e', 15, 20, 2.5);
+      [[-.35, -.1, -15], [-.05, .25, 10]].forEach(([a, b, rot]) => { const px = cx + a * rx, py = cy + b * ry; o += `<g transform="rotate(${rot} ${f1(px)} ${f1(py)})"><path d="${bumpy(px, py, rx * .3, ry * .38, 14, .08)}" fill="${G('#c98535')}"/>${dots(px, py, rx * .26, ry * .32, '#e7b464', 26, 1.6)}${dots(px, py, rx * .26, ry * .32, '#9c5a1d', 10, 1.3)}</g>`; });
+      o += tomatoW(cx + rx * .62, cy + ry * .5, ry * .2, 20) + tomatoW(cx + rx * .35, cy + ry * .62, ry * .18, -15);
+    } else if (t === 'okonomi') {
+      o += `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(rx * .72)}" ry="${f1(ry * .82)}" fill="${G('#c88a45')}"/>`;
+      o += `<path d="${bumpy(cx, cy, rx * .62, ry * .7, 14, .1)}" fill="${G('#5c2a12')}"/>`;
+      let z = `M${f1(cx - rx * .5)} ${f1(cy - ry * .45)}`; for (let i = 0; i < 9; i++) z += ` L${f1(cx - rx * .5 + (i + 1) * rx * .11)} ${f1(cy + (i % 2 ? -ry * .45 : ry * .45))}`;
+      o += `<path d="${z}" stroke="#fffbea" stroke-width="3" fill="none" stroke-linejoin="round"/>` + dots(cx, cy, rx * .55, ry * .62, '#3f7d22', 40, 1.3);
+      for (let i = 0; i < 12; i++) { const [px, py] = inE(cx, cy, rx * .5, ry * .55); o += `<path d="${bumpy(px, py, 4, 3, 5, .9)}" fill="#e2ab83" opacity=".9"/>`; }
+    } else if (t === 'nimono') {
+      o += `<path d="${bumpy(cx, cy, rx * .82, ry * .82, 12, .12)}" fill="#c69a5e" opacity=".55"/>`;
+      const items = [['#ead08a', /じゃが|いも/, 5, .13], ['#ec7a2c', /にんじん|人参/, 3, .08], ['#f3ecd4', /玉ねぎ|大根/, 4, .1], ['#8a5233', /肉|豚|牛|鶏/, 4, .1], ['#3f8a2e', /いんげん|絹さや|ブロッコリー/, 3, .06], ['#e39b2a', /かぼちゃ/, 3, .12]];
+      items.filter(([, re]) => has(x, re)).forEach(([c, , n, s]) => { for (let i = 0; i < n; i++) { const [px, py] = inE(cx, cy, rx * .6, ry * .6); o += piece(px, py, rx * s, ry * s * 1.6, c, .3, 7); } });
+      o += hl(cx - rx * .2, cy - ry * .4, rx * .25, ry * .06, .25);
+    } else if (t === 'noodle') {
+      const c = has(x, /焼きそば|ソース/) ? '#b67a3a' : has(x, /トマト|ナポリタン|ミート/) ? '#e6b660' : '#efd9a0';
+      for (let i = 0; i < 4; i++) o += `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(rx * (.7 - i * .14))}" ry="${f1(ry * (.75 - i * .15))}" fill="none" stroke="${shade(c, i * .08)}" stroke-width="9" opacity=".95"/>`;
+      o += strands(cx, cy, rx * .7, ry * .7, shade(c, -.1), 30, 26, 2.5);
+      if (has(x, /ミート|トマト|ナポリタン/)) o += `<path d="${bumpy(cx, cy - ry * .05, rx * .38, ry * .4, 10, .3)}" fill="${G('#b3361f')}"/>`;
+      o += mixed(x, cx, cy, rx * .45, ry * .45, null);
+    } else if (t === 'gyoza') {
+      for (let i = 0; i < 6; i++) { const px = cx - rx * .6 + i * rx * .24, py = cy + (i % 2 ? .08 : -.08) * ry; o += `<g transform="rotate(-20 ${f1(px)} ${f1(py)})"><path d="M${f1(px - rx * .1)} ${f1(py + ry * .3)} Q${f1(px - rx * .14)} ${f1(py - ry * .35)} ${f1(px)} ${f1(py - ry * .45)} Q${f1(px + rx * .14)} ${f1(py - ry * .35)} ${f1(px + rx * .1)} ${f1(py + ry * .3)}Z" fill="${G('#f3e4bf')}"/><path d="M${f1(px - rx * .09)} ${f1(py + ry * .25)} L${f1(px + rx * .09)} ${f1(py + ry * .25)}" stroke="#c07a2c" stroke-width="5" stroke-linecap="round"/></g>`; }
+    } else if (t === 'tamago') {
+      for (let i = 0; i < 4; i++) { const px = cx - rx * .45 + i * rx * .3; o += `<rect x="${f1(px - rx * .12)}" y="${f1(cy - ry * .4)}" width="${f1(rx * .24)}" height="${f1(ry * .8)}" rx="6" fill="${G('#f3c33c')}"/>` + [0.25, .5, .75].map(k => `<path d="M${f1(px - rx * .1)} ${f1(cy - ry * .4 + ry * .8 * k)} q${f1(rx * .1)} 4 ${f1(rx * .2)} 0" stroke="#e0a21e" stroke-width="1.4" fill="none"/>`).join(''); }
+    } else if (t === 'grill') {
+      const c = has(x, /鶏/) ? '#d9a061' : has(x, /牛/) ? '#7d4026' : '#c98f6e';
+      for (let i = 0; i < 5; i++) { const px = cx - rx * .45 + i * rx * .2, py = cy + (i - 2) * ry * .05; o += `<g transform="rotate(-25 ${f1(px)} ${f1(py)})"><rect x="${f1(px - rx * .1)}" y="${f1(py - ry * .45)}" width="${f1(rx * .2)}" height="${f1(ry * .9)}" rx="8" fill="${G(c)}"/><path d="M${f1(px - rx * .08)} ${f1(py - ry * .1)} h${f1(rx * .16)} M${f1(px - rx * .08)} ${f1(py + ry * .15)} h${f1(rx * .16)}" stroke="${shade(c, -.5)}" stroke-width="2" opacity=".6"/></g>`; }
+      if (has(x, /ねぎ/)) o += dots(cx - rx * .1, cy, rx * .45, ry * .35, '#5aa03a', 25, 1.8) + dots(cx - rx * .1, cy, rx * .45, ry * .35, '#f4f1e2', 10, 1.6);
+      o += lettuce(cx + rx * .62, cy - ry * .2, ry * .35) + tomatoW(cx + rx * .62, cy + ry * .4, ry * .2, 10);
+    } else o += mixed(x, cx, cy, rx, ry, has(x, /みそ|味噌/) ? '#8a5a26' : has(x, /しょうゆ|照り|甘辛/) ? '#7a4620' : null);
+    return o;
+  };
+  // ---- 副菜 ----
+  const drawSide = (x, cx, cy, rr) => {
+    const t = sideType(x); let o = '';
+    if (t === 'greens') {
+      if (has(x, /ブロッコリー/) && !has(x, /ほうれん草|小松菜|春菊/)) { for (let i = 0; i < 5; i++) { const [px, py] = inE(cx, cy, rr * .55, rr * .5); o += broc(px, py, rr * .28); } }
+      else { o += strands(cx, cy, rr * .55, rr * .4, '#2f6f24', 18, rr * 1.1, 4, -.2) + strands(cx, cy, rr * .5, rr * .35, '#5a9e3a', 14, rr * .9, 3, -.2); }
+      if (has(x, /もやし/)) o += strands(cx, cy, rr * .6, rr * .55, '#f3ecd0', 18, rr * .5, 2.4);
+      if (has(x, /にんじん|人参/)) o += strands(cx, cy, rr * .55, rr * .5, '#ec7a2c', 10, rr * .45, 2);
+      if (has(x, /油揚げ|厚揚げ/)) for (let i = 0; i < 5; i++) { const [px, py] = inE(cx, cy, rr * .5, rr * .5); o += `<rect x="${f1(px - 7)}" y="${f1(py - 2.5)}" width="14" height="5" rx="1.5" fill="${G('#d9a24a')}" transform="rotate(${f1(r() * 180)} ${f1(px)} ${f1(py)})"/>`; }
+      if (has(x, /卵|たまご/)) o += egg(cx + rr * .3, cy + rr * .3, rr * .22);
+      if (has(x, /しめじ|えのき|きのこ/)) o += dots(cx, cy, rr * .5, rr * .45, '#cdb08a', 7, 2.6);
+      if (has(x, /かつお|おかか|おひたし/)) for (let i = 0; i < 9; i++) { const [px, py] = inE(cx, cy - rr * .1, rr * .35, rr * .25); o += `<path d="${bumpy(px, py, 3.5, 2.5, 5, .9)}" fill="#e2ab83"/>`; }
+      if (has(x, /ごま|ナムル/)) o += dots(cx, cy, rr * .5, rr * .45, '#f4ecd6', 18, 1) + dots(cx, cy, rr * .5, rr * .45, '#3a2a1e', 8, .9);
+    } else if (t === 'salad') {
+      o += lettuce(cx, cy - rr * .15, rr * .45) + lettuce(cx - rr * .2, cy + rr * .2, rr * .35);
+      if (has(x, /トマト/)) o += tomatoW(cx + rr * .35, cy + rr * .15, rr * .2, 30) + tomatoW(cx - rr * .3, cy - rr * .35, rr * .18, -20);
+      if (has(x, /きゅうり/)) o += cuke(cx + rr * .1, cy + rr * .35, rr * .14) + cuke(cx - rr * .35, cy + rr * .05, rr * .13);
+      if (has(x, /卵|たまご/)) o += egg(cx + rr * .3, cy - rr * .25, rr * .2) + egg(cx - rr * .05, cy + rr * .05, rr * .18);
+      if (has(x, /ブロッコリー/)) o += broc(cx - rr * .35, cy + rr * .35, rr * .2) + broc(cx + rr * .4, cy + rr * .4, rr * .18);
+      if (has(x, /コーン/)) o += dots(cx, cy, rr * .5, rr * .45, '#f6cf3c', 12, 2);
+      if (has(x, /鶏|ささみ|ツナ|ハム/)) o += strands(cx, cy, rr * .4, rr * .35, '#eed9c0', 10, rr * .4, 3.2);
+    } else if (t === 'coleslaw') {
+      o += strands(cx, cy, rr * .6, rr * .55, '#e4efc4', 45, rr * .5, 2.6) + strands(cx, cy, rr * .55, rr * .5, '#ec7a2c', 8, rr * .35, 1.8) + (has(x, /コーン/) ? dots(cx, cy, rr * .5, rr * .45, '#f6cf3c', 14, 2.1) : '');
+    } else if (t === 'potato') {
+      o += `<path d="${bumpy(cx, cy, rr * .62, rr * .55, 12, .25)}" fill="${G('#f2e3b4')}"/>` + dots(cx, cy, rr * .45, rr * .4, '#e6d39a', 10, 2.5);
+      if (has(x, /きゅうり/)) o += cuke(cx + rr * .2, cy - rr * .15, rr * .13) + cuke(cx - rr * .25, cy + rr * .15, rr * .12);
+      if (has(x, /ハム/)) o += dots(cx, cy, rr * .4, rr * .35, '#f0a3a3', 5, 3);
+      if (has(x, /にんじん/)) o += dots(cx, cy, rr * .4, rr * .35, '#ec7a2c', 5, 2);
+    } else if (t === 'shirishiri') {
+      o += strands(cx, cy, rr * .55, rr * .5, '#e8742f', 40, rr * .6, 2.6) + strands(cx, cy, rr * .5, rr * .45, '#f39a4a', 15, rr * .5, 2);
+      if (has(x, /卵/)) for (let i = 0; i < 6; i++) { const [px, py] = inE(cx, cy, rr * .45, rr * .4); o += `<path d="${bumpy(px, py, 5, 4, 7, .6)}" fill="#f5cf4a"/>`; }
+      if (has(x, /ツナ/)) o += dots(cx, cy, rr * .45, rr * .4, '#e8d3b0', 8, 2.4);
+      if (has(x, /ごま/)) o += dots(cx, cy, rr * .5, rr * .45, '#f4ecd6', 12, 1);
+    } else if (t === 'tamago') {
+      for (let i = 0; i < 3; i++) o += `<rect x="${f1(cx - rr * .5 + i * rr * .34)}" y="${f1(cy - rr * .35)}" width="${f1(rr * .3)}" height="${f1(rr * .7)}" rx="5" fill="${G('#f3c33c')}"/>`;
+    } else if (t === 'tofu') {
+      o += `<rect x="${f1(cx - rr * .4)}" y="${f1(cy - rr * .32)}" width="${f1(rr * .8)}" height="${f1(rr * .64)}" rx="4" fill="${G('#fbf8ee')}"/>` + dots(cx, cy - rr * .1, rr * .2, rr * .1, '#5aa03a', 8, 1.6) + piece(cx + rr * .1, cy - rr * .05, rr * .08, rr * .06, '#e8c27a', .4);
+    } else o += mixed(x, cx, cy, rr * .6, rr * .55, null);
+    return o;
+  };
+  // ---- 汁物 ----
+  const drawSoup = (x, cx, cy, rr) => {
+    const [c, t] = soupType(x); let o = `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(rr)}" fill="${G(c, 'flat')}"/>`;
+    if (t === 'miso' || t === 'tonjiru') for (let i = 0; i < 4; i++) { const [px, py] = inE(cx, cy, rr * .5, rr * .5); o += `<path d="${bumpy(px, py, rr * .3, rr * .22, 8, .6)}" fill="${shade(c, .25)}" opacity=".45"/>`; }
+    const fl = [];
+    if (has(x, /豆腐/)) for (let i = 0; i < 4; i++) fl.push(() => { const [px, py] = inE(cx, cy, rr * .55, rr * .55); return cube(px, py, rr * .22, '#fbf8ee'); });
+    if (has(x, /油揚げ|厚揚げ/)) for (let i = 0; i < 3; i++) fl.push(() => { const [px, py] = inE(cx, cy, rr * .55, rr * .55); return `<rect x="${f1(px - 6)}" y="${f1(py - 2.5)}" width="12" height="5" rx="1.5" fill="${G('#d9a24a')}" transform="rotate(${f1(r() * 180)} ${f1(px)} ${f1(py)})"/>`; });
+    if (has(x, /わかめ/)) for (let i = 0; i < 4; i++) fl.push(() => { const [px, py] = inE(cx, cy, rr * .6, rr * .6); return `<path d="${bumpy(px, py, rr * .18, rr * .1, 8, .7)}" fill="#1f4a22" opacity=".9"/>`; });
+    if (has(x, /ほうれん草|小松菜|三つ葉|青菜/)) for (let i = 0; i < 3; i++) fl.push(() => { const [px, py] = inE(cx, cy, rr * .55, rr * .55); return leaf(px, py, rr * .18, '#3f8a2e', r() * 180); });
+    if (has(x, /えのき|しめじ|きのこ/)) fl.push(() => strands(cx, cy, rr * .5, rr * .5, '#efe3c4', 10, rr * .45, 1.8));
+    if (has(x, /卵|たまご/)) fl.push(() => { let s = ''; for (let i = 0; i < 4; i++) { const [px, py] = inE(cx, cy, rr * .5, rr * .5); s += `<path d="${bumpy(px, py, rr * .2, rr * .1, 9, .8)}" fill="#f5d04f" opacity=".95"/>`; } return s; });
+    if (has(x, /コーン/)) fl.push(() => dots(cx, cy, rr * .55, rr * .55, '#f3c72e', 14, 2));
+    if (has(x, /豚|ベーコン|鶏/)) for (let i = 0; i < 4; i++) fl.push(() => { const [px, py] = inE(cx, cy, rr * .55, rr * .55); return `<rect x="${f1(px - 6)}" y="${f1(py - 2.5)}" width="12" height="5" rx="2.5" fill="${G('#d8a68a')}" transform="rotate(${f1(r() * 180)} ${f1(px)} ${f1(py)})"/>`; });
+    if (has(x, /にんじん|人参/)) for (let i = 0; i < 3; i++) fl.push(() => { const [px, py] = inE(cx, cy, rr * .55, rr * .55); return `<path d="M${f1(px - 5)} ${f1(py)} A5 5 0 0 1 ${f1(px + 5)} ${f1(py)}Z" fill="#ec7a2c" transform="rotate(${f1(r() * 360)} ${f1(px)} ${f1(py)})"/>`; });
+    if (has(x, /大根/)) for (let i = 0; i < 3; i++) fl.push(() => { const [px, py] = inE(cx, cy, rr * .55, rr * .55); return `<path d="M${f1(px - 6)} ${f1(py)} A6 6 0 0 1 ${f1(px + 6)} ${f1(py)}Z" fill="#f4efe0" transform="rotate(${f1(r() * 360)} ${f1(px)} ${f1(py)})"/>`; });
+    if (has(x, /玉ねぎ/)) fl.push(() => strands(cx, cy, rr * .5, rr * .5, '#f6eccb', 6, rr * .35, 2.2));
+    if (has(x, /トマト/)) for (let i = 0; i < 3; i++) fl.push(() => { const [px, py] = inE(cx, cy, rr * .5, rr * .5); return piece(px, py, rr * .12, rr * .1, '#c92f1f', .4, 6); });
+    fl.forEach(fn => o += fn());
+    if (has(x, /ねぎ/)) for (let i = 0; i < 7; i++) { const [px, py] = inE(cx, cy, rr * .55, rr * .55); o += `<circle cx="${f1(px)}" cy="${f1(py)}" r="2.6" fill="none" stroke="#5aa03a" stroke-width="1.8"/>`; }
+    if (t === 'potage') o += dots(cx, cy, rr * .3, rr * .3, '#3f8a2e', 6, 1.2);
+    return o + hl(cx - rr * .35, cy - rr * .45, rr * .3, rr * .1, .3);
+  };
+  // ---- 配置 ----
+  const main = ds.find(x => x.role === '主菜') || ds[0];
+  const sides = ds.filter(x => x !== main && x.role !== '汁物');
+  const soup = ds.find(x => x.role === '汁物');
+  const oneDish = main && ['curry', 'noodle'].includes(mainType(main));
+  let g = `<rect x="2" y="2" width="356" height="236" rx="18" fill="${G('#b8844f', 'flat')}"/><rect x="9" y="9" width="342" height="222" rx="13" fill="#c99560"/>`;
+  for (let i = 0; i < 8; i++) { const y = 18 + i * 28 + r() * 8; g += `<path d="M12 ${f1(y)} C 120 ${f1(y - 7)}, 240 ${f1(y + 8)}, 348 ${f1(y - 2)}" stroke="#b07f4c" stroke-width="1.3" fill="none" opacity=".5"/>`; }
+  const shadow = (cx, cy, rx, ry) => `<ellipse cx="${f1(cx + 3)}" cy="${f1(cy + 5)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="#3a2410" opacity=".22"/>`;
+  const labels = [];
+  // 主菜の皿
+  const MX = 138, MY = 88, MRX = 112, MRY = 70;
+  g += shadow(MX, MY, MRX, MRY) + `<ellipse cx="${MX}" cy="${MY}" rx="${MRX}" ry="${MRY}" fill="${G('#f6f3ec', 'flat')}"/><ellipse cx="${MX}" cy="${MY}" rx="${MRX - 14}" ry="${MRY - 10}" fill="#efebe1"/>`;
+  if (main) { g += drawMain(main, MX, MY, MRX - 26, MRY - 18); labels.push([MX, MY + MRY - 6, main.name]); }
+  // 副菜の小鉢
+  const SX = 300, SY = 70, SR = 48;
+  g += shadow(SX, SY, SR, SR) + `<circle cx="${SX}" cy="${SY}" r="${SR}" fill="${G('#2f4a68', 'flat')}"/><circle cx="${SX}" cy="${SY}" r="${SR - 7}" fill="#efe9dc"/>`;
+  for (let i = 0; i < 10; i++) { const a = i / 10 * 6.283; g += `<circle cx="${f1(SX + Math.cos(a) * (SR - 3.5))}" cy="${f1(SY + Math.sin(a) * (SR - 3.5))}" r="1.6" fill="#dfe7ef" opacity=".7"/>`; }
+  if (sides[0]) { g += drawSide(sides[0], SX, SY, SR - 10); labels.push([SX, SY + SR + 2, sides[0].name]); }
+  // ごはん（丼・カレーの日は2品目の副菜を置く）
+  const RX = 80, RY = 186, RR = 46;
+  if (!oneDish) {
+    g += shadow(RX, RY, RR, RR) + `<circle cx="${RX}" cy="${RY}" r="${RR}" fill="${G('#f4efe4', 'flat')}"/><circle cx="${RX}" cy="${RY}" r="${RR - 6}" fill="#fbf8f0"/><path d="${bumpy(RX, RY - 2, RR - 12, RR - 14, 14, .12)}" fill="${G('#fffdf7')}"/>`;
+    for (let i = 0; i < 40; i++) { const [px, py] = inE(RX, RY - 2, RR - 16, RR - 18); const a = r() * 180; g += `<ellipse cx="${f1(px)}" cy="${f1(py)}" rx="3.4" ry="1.7" fill="#fffef9" stroke="#e7e0cc" stroke-width=".6" transform="rotate(${f1(a)} ${f1(px)} ${f1(py)})"/>`; }
+    labels.push([RX, RY + RR + 2, 'ごはん']);
+  } else if (sides[1]) {
+    g += shadow(RX, RY, RR - 4, RR - 4) + `<circle cx="${RX}" cy="${RY}" r="${RR - 4}" fill="${G('#e8e2d4', 'flat')}"/><circle cx="${RX}" cy="${RY}" r="${RR - 10}" fill="#f6f2e8"/>` + drawSide(sides[1], RX, RY, RR - 14);
+    labels.push([RX, RY + RR - 2, sides[1].name]);
+  }
+  // 汁椀
+  const WX = 282, WY = 184, WR = 46;
+  g += shadow(WX, WY, WR, WR) + `<circle cx="${WX}" cy="${WY}" r="${WR}" fill="${G('#6a1f1a', 'flat')}"/><circle cx="${WX}" cy="${WY}" r="${WR - 6}" fill="#3a0f0c"/>`;
+  if (soup) { g += drawSoup(soup, WX, WY, WR - 9); labels.push([WX, WY + WR + 2, soup.name]); }
   // 箸
-  g += `<rect x="128" y="186" width="70" height="4" rx="2" fill="#3b2a1e" transform="rotate(-8 128 186)"/><rect x="132" y="192" width="70" height="4" rx="2" fill="#3b2a1e" transform="rotate(-8 132 192)"/>`;
-  return `<svg viewBox="0 0 320 204" role="img" aria-label="${esc(ds.map(x => x.name).join('、'))}のイメージ図">${g}</svg>`;
+  g += `<g transform="rotate(-6 180 222)"><rect x="140" y="214" width="92" height="4.5" rx="2.2" fill="#3b2a1e"/><rect x="142" y="222" width="92" height="4.5" rx="2.2" fill="#3b2a1e"/></g>`;
+  if (opts.labels) labels.forEach(([lx, ly, name]) => {
+    const t = String(name).replace(/（.*?）|\(.*?\)/g, '');
+    const s = t.length > 11 ? t.slice(0, 10) + '…' : t; const w = s.length * 10.5 + 14;
+    const x0 = Math.max(4, Math.min(356 - w, lx - w / 2)), y0 = Math.min(ly - 10, 218);
+    g += `<rect x="${f1(x0)}" y="${f1(y0)}" width="${f1(w)}" height="18" rx="9" fill="#1e3932" opacity=".88"/><text x="${f1(x0 + w / 2)}" y="${f1(y0 + 12.5)}" text-anchor="middle" font-size="10.5" font-weight="700" fill="#ffffff" font-family="'Zen Kaku Gothic New', sans-serif">${esc(s)}</text>`;
+  });
+  return `<svg viewBox="0 0 360 240" role="img" aria-label="${esc(ds.map(x => x.name).join('、'))}のイメージ図"><defs>${[...defs.values()].join('')}</defs>${g}</svg>`;
 }
 
 /* ---------- 栄養 ---------- */
@@ -773,7 +973,7 @@ function lunchCard(date) {
 }
 function dayAll(day, date) {
   const dishes = day.dishes || [];
-  let h = `<figure class="card art" style="margin:0">${trayArt(day)}<figcaption>献立のイメージ図</figcaption></figure>` + lunchCard(date) + `<ul class="plain card menu-sum">${dishes.map((x, i) => `<li><span class="role">${esc(x.role)}</span><button data-act="goto-dish" data-i="${i}" class="nm" style="border:0;background:none;padding:0;text-align:left;cursor:pointer;font-weight:700;color:var(--ink)">${esc(x.name)}</button><span class="chip min">${x.min ? x.min + '分' : ''}</span></li>`).join('')}</ul>`;
+  let h = `<figure class="card art" style="margin:0">${trayArt(day, { labels: true })}<figcaption>献立のイメージ図（料理名と材料から自動で描いています）</figcaption></figure>` + lunchCard(date) + `<ul class="plain card menu-sum">${dishes.map((x, i) => `<li><span class="role">${esc(x.role)}</span><button data-act="goto-dish" data-i="${i}" class="nm" style="border:0;background:none;padding:0;text-align:left;cursor:pointer;font-weight:700;color:var(--ink)">${esc(x.name)}</button><span class="chip min">${x.min ? x.min + '分' : ''}</span></li>`).join('')}</ul>`;
   if (day.uses?.length || day.carry?.length) {
     h += `<div class="leftover"><h3>${ICON.loop.replace('<svg', '<svg width="16" height="16"')}食材のつかいまわし</h3>
       ${(day.uses || []).map(u => `<div class="lo-row"><span class="tag">前から</span><span><b>${esc(u.n)}</b> ${esc(u.q || '')} <span class="muted">← ${esc(u.from || '')}</span></span></div>`).join('')}
