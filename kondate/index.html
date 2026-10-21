@@ -233,6 +233,9 @@ textarea.inp { min-height: 96px; resize: vertical; line-height: 1.6; }
 .ev .who { font-weight: 700; color: var(--brand); margin-right: 4px; }
 .x { width: 32px; height: 32px; border-radius: 50%; border: 0; background: transparent; color: var(--ink-soft); cursor: pointer; font-size: 18px; flex: none; }
 .add-ev { justify-self: start; }
+.rep { display: inline-block; margin-right: 3px; font-weight: 700; color: var(--brand); }
+.dows { display: none; }
+#ev-form:has(#rp-week:checked) .dows { display: block; }
 .chip.lunch { background: var(--ceramic); color: var(--ink); }
 .chip.lunch b { color: var(--brand); font-weight: 700; margin-right: 3px; }
 .lunch-card { padding: 16px; display: grid; gap: 12px; }
@@ -324,7 +327,7 @@ const uid = () => Math.random().toString(36).slice(2, 9);
 
 const S = {
   week: mondayOf(new Date()),
-  days: {}, events: {}, kidmenus: {}, family: { members: [], prefs: {} }, checks: {},
+  days: {}, events: {}, recurring: {}, kidmenus: {}, family: { members: [], prefs: {} }, checks: {},
   tab: 'week', day: null, dayTab: 'all', dish: 0,
   gen: null, db: null, sample: null, me: null, user: null, names: {},
   loaded: false,
@@ -367,6 +370,7 @@ async function boot() {
   const on = (col, fn) => db.collection(col).onSnapshot(snap => { fn(snap); render(); resolveNames(); }, () => {});
   on('days', snap => { S.days = {}; snap.docs.forEach(d => { const v = d.data(); if (v) S.days[d.id] = v; }); });
   on('events', snap => { S.events = {}; snap.docs.forEach(d => { const v = d.data(); if (v) S.events[d.id] = v; }); });
+  on('recurring', snap => { S.recurring = {}; snap.docs.forEach(d => { const v = d.data(); if (v) S.recurring[d.id] = { ...v, id: d.id }; }); });
   on('kidmenus', snap => { S.kidmenus = {}; snap.docs.forEach(d => { const v = d.data(); if (v) S.kidmenus[d.id] = v; }); });
   on('shopping', snap => { S.checks = {}; snap.docs.forEach(d => { const v = d.data(); if (v) S.checks[d.id] = v.checked || {}; }); });
   db.doc('family/main').onSnapshot(snap => { const v = snap.exists ? snap.data() : null; S.family = { members: v?.members || [], prefs: v?.prefs || {} }; render(); }, () => {});
@@ -383,13 +387,20 @@ function toast(msg) {
   const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = msg;
   document.body.appendChild(t); setTimeout(() => t.remove(), 3200);
 }
-function evItems(date) { return S.events[date]?.items || []; }
+function evItems(date) {
+  const dw = parseD(date).getDay();
+  const rep = Object.values(S.recurring).filter(r => (r.dows || []).includes(dw) && date >= (r.start || '') && !(r.skip || []).includes(date))
+    .map(r => ({ who: r.who, kind: r.kind, memo: r.memo, rid: r.id }));
+  return [...rep, ...(S.events[date]?.items || []).map((e, i) => ({ ...e, i }))];
+}
+const REP_MARK = '<span class="rep" aria-label="毎週">↻</span>';
+const dowsLabel = ds => [1, 2, 3, 4, 5, 6, 0].filter(d => (ds || []).includes(d)).map(d => DOW[d]).join('・');
 function memberName(id) { if (id === 'all') return '家族'; return S.family.members.find(m => m.id === id)?.name || ''; }
 function evChips(date) {
   return evItems(date).map(e => {
     const warn = /遅い|外食/.test(e.kind) ? ' warn' : '';
     const who = memberName(e.who);
-    return `<span class="chip${warn}">${who ? esc(who) + '・' : ''}${esc(e.kind)}${e.memo ? '（' + esc(e.memo) + '）' : ''}</span>`;
+    return `<span class="chip${warn}">${e.rid ? REP_MARK : ''}${who ? esc(who) + '・' : ''}${esc(e.kind)}${e.memo ? '（' + esc(e.memo) + '）' : ''}</span>`;
   }).join('');
 }
 function lunchFor(date) {
@@ -505,11 +516,12 @@ function viewSched() {
     <button class="btn" data-act="imp-open">${ICON.camera}献立表を読み込む</button>
     ${docs.length ? `<div class="menus-list">${docs.map(([id, d]) => `<div class="ev"><span class="txt"><span class="who">${esc(memberName(d.who) || '子ども')}</span>${esc(monthLabel(d.month))}の${esc(d.source || '給食')}<small>${Object.keys(d.items || {}).length}日分</small></span><button class="x" data-act="imp-del" data-id="${esc(id)}" aria-label="この献立表を消す">×</button></div>`).join('')}</div>` : ''}
   </div>
-  <p class="hint">習い事で帰りが遅い日やお弁当がいる日を入れておくと、AIが時短メニューや作り置きに切り替えます。</p>`;
+  ${Object.keys(S.recurring).length ? `<div class="card lunch-card"><h3>毎週の予定</h3><div class="menus-list">${Object.values(S.recurring).map(r => `<div class="ev"><span class="txt">${REP_MARK}<span class="who">${esc(memberName(r.who) || '家族')}</span>毎週${esc(dowsLabel(r.dows))} ${esc(r.kind)}${r.memo ? `<small>（${esc(r.memo)}）</small>` : ''}</span><button class="x" data-act="rep-del" data-rid="${esc(r.id)}" aria-label="この毎週の予定をやめる">×</button></div>`).join('')}</div></div>` : ''}
+  <p class="hint">習い事で帰りが遅い日やお弁当がいる日を入れておくと、AIが時短メニューや作り置きに切り替えます。毎週ある予定は「毎週くり返す」で一度入れるだけで済みます。</p>`;
   weekDates().forEach(date => {
     const d = parseD(date); const cls = d.getDay() === 0 ? ' sun' : d.getDay() === 6 ? ' sat' : '';
     h += `<div class="card sched"><span class="dnum${cls}"><span class="dow">${dowOf(date)}</span><span class="dd">${d.getDate()}</span></span>
-      <div class="ev-list">${lunchFor(date).length ? `<div class="chips">${lunchChips(date)}</div>` : ''}${evItems(date).map((e, i) => `<div class="ev"><span class="txt">${memberName(e.who) ? `<span class="who">${esc(memberName(e.who))}</span>` : ''}${esc(e.kind)}${e.memo ? `<span class="muted">（${esc(e.memo)}）</span>` : ''}</span><button class="x" data-act="ev-del" data-date="${date}" data-i="${i}" aria-label="この予定を消す">×</button></div>`).join('')}
+      <div class="ev-list">${lunchFor(date).length ? `<div class="chips">${lunchChips(date)}</div>` : ''}${evItems(date).map(e => `<div class="ev"><span class="txt">${e.rid ? REP_MARK : ''}${memberName(e.who) ? `<span class="who">${esc(memberName(e.who))}</span>` : ''}${esc(e.kind)}${e.memo ? `<span class="muted">（${esc(e.memo)}）</span>` : ''}</span><button class="x" data-act="ev-del" data-date="${date}" ${e.rid ? `data-rid="${esc(e.rid)}"` : `data-i="${e.i}"`} aria-label="この予定を消す">×</button></div>`).join('')}
       <button class="btn small ghost add-ev" data-act="ev-add" data-date="${date}">＋ 予定</button></div></div>`;
   });
   return h;
@@ -656,11 +668,21 @@ function sheetEvent(date) {
       ${ms.map(m => `<input type="radio" name="who" id="w-${m.id}" value="${m.id}"><label for="w-${m.id}">${esc(m.name)}</label>`).join('')}</div></div>
     <div><span class="hint">内容</span><div class="opt" style="margin-top:6px">${EV_KINDS.map((k, i) => `<input type="radio" name="kind" id="k-${i}" value="${k}" ${i === 0 ? 'checked' : ''}><label for="k-${i}">${k}</label>`).join('')}</div></div>
     <label class="f">メモ（任意）<input class="inp" id="ev-memo" name="memo" placeholder="例：19時帰宅／給食がカレー"></label>
+    <div><span class="hint">くり返し</span><div class="opt" style="margin-top:6px">
+      <input type="radio" name="rep" id="rp-once" value="once" checked><label for="rp-once">この日だけ</label>
+      <input type="radio" name="rep" id="rp-week" value="week"><label for="rp-week">毎週くり返す</label></div></div>
+    <div class="dows"><span class="hint">くり返す曜日（複数選べます）</span><div class="opt" style="margin-top:6px">${[1, 2, 3, 4, 5, 6, 0].map(d => `<input type="checkbox" name="dow" id="dw-${d}" value="${d}" ${d === parseD(date).getDay() ? 'checked' : ''}><label for="dw-${d}">${DOW[d]}</label>`).join('')}</div></div>
     <button class="btn block" type="submit">予定を追加</button>
   </form>`, el => {
     el.querySelector('form').addEventListener('submit', e => {
       e.preventDefault(); const f = new FormData(e.target);
-      const d = S.events[date] || { items: [] }; d.items = [...(d.items || []), { who: f.get('who'), kind: f.get('kind'), memo: String(f.get('memo') || '').trim() }];
+      const item = { who: f.get('who'), kind: f.get('kind'), memo: String(f.get('memo') || '').trim() };
+      if (f.get('rep') === 'week') {
+        const dows = f.getAll('dow').map(Number); if (!dows.length) { toast('くり返す曜日を選んでください'); return; }
+        const r = { ...item, id: uid(), dows, start: date, skip: [] };
+        S.recurring[r.id] = r; render(); put('recurring/' + r.id, r); closeSheet(); toast('毎週' + dowsLabel(dows) + 'の予定にしました'); return;
+      }
+      const d = S.events[date] || { items: [] }; d.items = [...(d.items || []), item];
       S.events[date] = d; saveEvents(date); closeSheet();
     });
   });
@@ -1077,7 +1099,17 @@ document.addEventListener('click', e => {
     case 'swap-open': sheetSwap(+t.dataset.i); break;
     case 'gen-open': sheetGen(); break;
     case 'ev-add': sheetEvent(t.dataset.date); break;
-    case 'ev-del': { const d = S.events[t.dataset.date]; d.items.splice(+t.dataset.i, 1); saveEvents(t.dataset.date); break; }
+    case 'ev-del': {
+      const date = t.dataset.date;
+      if (t.dataset.rid) { const r = S.recurring[t.dataset.rid]; if (!r) break;
+        openSheet(`<h3>毎週の予定「${esc(r.kind)}」</h3><p class="hint">${esc(memberName(r.who) || '家族')}・毎週${esc(dowsLabel(r.dows))}</p>
+          <button class="btn block" data-act="rep-skip" data-rid="${esc(r.id)}" data-date="${date}">${md(date)}（${dowOf(date)}）だけ休み</button>
+          <button class="btn danger block" data-act="rep-del-ok" data-rid="${esc(r.id)}">毎週の予定をやめる</button>
+          <button class="btn ghost block" data-act="sheet-close">やめる</button>`); break; }
+      const d = S.events[date]; d.items.splice(+t.dataset.i, 1); saveEvents(date); break; }
+    case 'rep-skip': { const r = S.recurring[t.dataset.rid]; if (!r) break; r.skip = [...new Set([...(r.skip || []), t.dataset.date])]; render(); put('recurring/' + r.id, r); closeSheet(); toast(md(t.dataset.date) + 'だけ休みにしました'); break; }
+    case 'rep-del': { const r = S.recurring[t.dataset.rid]; if (!r) break; openSheet(`<h3>「${esc(r.kind)}」の毎週の予定をやめますか？</h3><p class="hint">${esc(memberName(r.who) || '家族')}・毎週${esc(dowsLabel(r.dows))}。過去と今後のすべての週から消えます。</p><button class="btn danger block" data-act="rep-del-ok" data-rid="${esc(r.id)}">やめる</button><button class="btn ghost block" data-act="sheet-close">残す</button>`); break; }
+    case 'rep-del-ok': { const id = t.dataset.rid; delete S.recurring[id]; render(); closeSheet(); if (S.db) S.db.doc('recurring/' + id).delete().catch(() => toast('削除できませんでした')); break; }
     case 'mem-edit': sheetMember(t.dataset.id); break;
     case 'mem-del': S.family.members = S.family.members.filter(m => m.id !== t.dataset.id); saveFamily(); closeSheet(); break;
     case 'copy-shop': copyShop(); break;
