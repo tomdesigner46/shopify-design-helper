@@ -493,8 +493,6 @@ function render() { renderTop(); renderNav(); renderView(); renderOverlay(); doc
 
 function renderTop() {
   const dates = weekDates();
-  const filled = dates.filter(d => S.days[d]?.dishes?.length).length;
-  const carries = dates.reduce((a, d) => a + (S.days[d]?.uses?.length || 0), 0);
   const titles = { week: '今週の夕ごはん', sched: '家族の予定', shop: '買い物リスト', family: '家族のプロフィール' };
   const thisWeek = S.week === mondayOf(new Date());
   const rel = thisWeek ? '今週' : (S.week > mondayOf(new Date()) ? (S.week === addDays(mondayOf(new Date()), 7) ? '来週' : '') : '');
@@ -505,11 +503,6 @@ function renderTop() {
       <button class="icon-btn" data-act="wk" data-n="-7" aria-label="前の週">${ICON.left}</button>
       <div class="week-label">${md(dates[0])} – ${md(dates[6])}${rel ? `<small>${rel}</small>` : ''}</div>
       <button class="icon-btn" data-act="wk" data-n="7" aria-label="次の週">${ICON.right}</button>
-    </div>
-    <div class="stats">
-      <span class="stat"><b>${filled}</b>/7日 決定</span>
-      <span class="stat gold"><b>${carries}</b>回 残り物つかいきり</span>
-      <span class="stat"><b>${shoppingList().filter(i => i.cat !== '調味料').length}</b>品 買い物</span>
     </div>` : `<div class="top-row"><div class="week-label">${S.family.members.length ? S.family.members.length + '人家族' : 'わが家'}</div></div>`}
   </div>`;
 }
