@@ -29,6 +29,7 @@
   --g-red: #d4493f; --g-yellow: #d99a1e; --g-green: #2f8f57; /* 3色食品群（検証済み） */
   --ok: #2f7d4f; --warn: #a65f00; --track: #e9e6df;
   --line-strong: #c9c3b6;
+  --p-fish: #2a78d6; --p-beef: #eb6834; --p-egg: #1baf7a; --p-chicken: #eda100; --p-pork: #e87ba4; --p-other: #a39d90; /* 主菜の主材料（検証済み） */
   --shadow-card: 0 0 .5px rgba(0,0,0,.14), 0 1px 1px rgba(0,0,0,.24);
   --shadow-frap: 0 0 6px rgba(0,0,0,.24), 0 8px 12px rgba(0,0,0,.14);
   --f-body: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
@@ -41,7 +42,7 @@
     --ink: rgba(255,255,255,.9); --ink-soft: rgba(255,255,255,.62); --line: rgba(255,255,255,.1);
     --brand: #6cc59c; --accent: #1f8a5c; --accent-text: #6cc59c; --on-accent: #ffffff;
     --house: #0c1512; --uplift: #24453c; --on-house: #ffffff; --on-house-soft: rgba(255,255,255,.66);
-    --mint: #1f3a30; --gold: #d9b56e; --gold-line: #b8954f; --gold-wash: #26241a; --red: #ff7b6e; --sat: #7fb2e5; --g-red: #cc3d3a; --g-yellow: #b48e1c; --g-green: #2a9b8a; --ok: #6cc59c; --warn: #f0a94a; --track: #2a3631; --line-strong: rgba(255,255,255,.28);
+    --mint: #1f3a30; --gold: #d9b56e; --gold-line: #b8954f; --gold-wash: #26241a; --red: #ff7b6e; --sat: #7fb2e5; --g-red: #cc3d3a; --g-yellow: #b48e1c; --g-green: #2a9b8a; --ok: #6cc59c; --warn: #f0a94a; --track: #2a3631; --line-strong: rgba(255,255,255,.28); --p-fish: #3987e5; --p-beef: #d95926; --p-egg: #199e70; --p-chicken: #c98500; --p-pork: #d55181; --p-other: #6d7570;
     --shadow-card: 0 0 0 1px rgba(255,255,255,.06); --shadow-frap: 0 0 6px rgba(0,0,0,.5), 0 8px 12px rgba(0,0,0,.4);
     color-scheme: dark;
   }
@@ -51,7 +52,7 @@
   --ink: rgba(255,255,255,.9); --ink-soft: rgba(255,255,255,.62); --line: rgba(255,255,255,.1);
   --brand: #6cc59c; --accent: #1f8a5c; --accent-text: #6cc59c; --on-accent: #ffffff;
   --house: #0c1512; --uplift: #24453c; --on-house: #ffffff; --on-house-soft: rgba(255,255,255,.66);
-  --mint: #1f3a30; --gold: #d9b56e; --gold-line: #b8954f; --gold-wash: #26241a; --red: #ff7b6e; --sat: #7fb2e5; --g-red: #cc3d3a; --g-yellow: #b48e1c; --g-green: #2a9b8a; --ok: #6cc59c; --warn: #f0a94a; --track: #2a3631; --line-strong: rgba(255,255,255,.28);
+  --mint: #1f3a30; --gold: #d9b56e; --gold-line: #b8954f; --gold-wash: #26241a; --red: #ff7b6e; --sat: #7fb2e5; --g-red: #cc3d3a; --g-yellow: #b48e1c; --g-green: #2a9b8a; --ok: #6cc59c; --warn: #f0a94a; --track: #2a3631; --line-strong: rgba(255,255,255,.28); --p-fish: #3987e5; --p-beef: #d95926; --p-egg: #199e70; --p-chicken: #c98500; --p-pork: #d55181; --p-other: #6d7570;
   --shadow-card: 0 0 0 1px rgba(255,255,255,.06); --shadow-frap: 0 0 6px rgba(0,0,0,.5), 0 8px 12px rgba(0,0,0,.4);
   color-scheme: dark;
 }
@@ -267,7 +268,8 @@ textarea.inp { min-height: 96px; resize: vertical; line-height: 1.6; }
 .gitems span { font-size: 12px; border-radius: 50px; padding: 2px 8px; border: 1.5px solid var(--c); }
 .gitems .none { border-style: dashed; color: var(--ink-soft); }
 .wk-chart { padding: 14px 16px; display: grid; gap: 10px; }
-.wk-chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.wk-chart > svg { display: block; width: 100%; height: auto; overflow: visible; }
+.wk-chart .btn { justify-self: start; }
 .wk-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .wk-stats div { background: var(--ceramic); border-radius: 8px; padding: 8px 10px; display: grid; }
 .wk-stats b { font-family: var(--f-num); font-size: 20px; font-weight: 800; color: var(--brand); line-height: 1.2; }
@@ -283,6 +285,29 @@ textarea.inp { min-height: 96px; resize: vertical; line-height: 1.6; }
 .plan h4 { margin: 0; font-size: 15px; color: var(--brand); }
 .plan .chg { font-size: 13px; display: grid; gap: 4px; background: var(--ceramic); border-radius: 8px; padding: 8px 10px; }
 .plan .chg b { color: var(--brand); }
+.viewtog { justify-content: flex-start; }
+.mhead, .mgrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.mhead span { text-align: center; font-size: 11px; font-weight: 700; color: var(--ink-soft); }
+.mhead span:nth-child(6) { color: var(--sat); } .mhead span:nth-child(7) { color: var(--red); }
+.mcell { min-height: 92px; min-width: 0; padding: 5px 4px; border: 0; border-radius: 8px; background: var(--card); box-shadow: var(--shadow-card); display: flex; flex-direction: column; gap: 3px; text-align: left; cursor: pointer; transition: transform .2s ease; color: var(--ink); }
+.mcell:active { transform: scale(.95); }
+.mcell.other { background: transparent; box-shadow: none; opacity: .45; }
+.mcell.today { box-shadow: 0 0 0 2px var(--accent); }
+.mcell.past { opacity: .7; }
+.mcell .dn { font-family: var(--f-num); font-weight: 800; font-size: 13px; line-height: 1; display: flex; align-items: center; justify-content: space-between; gap: 2px; }
+.mcell .dn .ev { width: 6px; height: 6px; border-radius: 50%; background: var(--warn); padding: 0; }
+.mcell .mn { font-size: 10.5px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; word-break: break-all; }
+.mcell .mn.struck { text-decoration: line-through; }
+.mcell .none { font-size: 10px; color: var(--ink-soft); }
+.pchip { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; line-height: 1.2; white-space: nowrap; }
+.pchip i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex: none; }
+.pbar { display: flex; gap: 2px; height: 14px; border-radius: 4px; overflow: hidden; }
+.pbar span { background: var(--c); }
+.plegend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; }
+.plegend .pchip { font-size: 12px; font-weight: 500; }
+.plegend .pchip i { width: 10px; height: 10px; }
+.plegend b { font-family: var(--f-num); margin-left: 2px; }
+.similar { display: grid; gap: 4px; font-size: 12.5px; color: var(--warn); }
 .tip-pop { position: fixed; z-index: 60; background: var(--house); color: var(--on-house); font-size: 12px; padding: 6px 10px; border-radius: 8px; pointer-events: none; box-shadow: var(--shadow-frap); white-space: nowrap; }
 .chip.lunch { background: var(--ceramic); color: var(--ink); }
 .chip.lunch b { color: var(--brand); font-weight: 700; margin-right: 3px; }
@@ -376,12 +401,12 @@ const uid = () => Math.random().toString(36).slice(2, 9);
 const S = {
   week: mondayOf(new Date()),
   days: {}, events: {}, recurring: {}, kidmenus: {}, family: { members: [], prefs: {} }, checks: {},
-  tab: 'week', day: null, dayTab: 'all', dish: 0,
+  tab: 'week', view: 'week', month: TODAY.slice(0, 7), day: null, dayTab: 'all', dish: 0,
   gen: null, db: null, sample: null, me: null, user: null, names: {},
   loaded: false,
 };
 const weekDates = () => [...Array(7)].map((_, i) => addDays(S.week, i));
-try { const t = localStorage.getItem('kondate.tab'); if (t) S.tab = t; S.nutWho = localStorage.getItem('kondate.nutWho') || 'adult'; } catch (e) {}
+try { const t = localStorage.getItem('kondate.tab'); if (t) S.tab = t; S.nutWho = localStorage.getItem('kondate.nutWho') || 'adult'; S.view = localStorage.getItem('kondate.view') || 'week'; } catch (e) {}
 
 /* ---------- persistence ---------- */
 async function put(path, data) {
@@ -493,13 +518,17 @@ function render() { renderTop(); renderNav(); renderView(); renderOverlay(); doc
 
 function renderTop() {
   const dates = weekDates();
-  const titles = { week: '今週の夕ごはん', sched: '家族の予定', shop: '買い物リスト', family: '家族のプロフィール' };
+  const titles = { week: S.view === 'month' ? 'ひと月の夕ごはん' : '今週の夕ごはん', sched: '家族の予定', shop: '買い物リスト', family: '家族のプロフィール' };
   const thisWeek = S.week === mondayOf(new Date());
   const rel = thisWeek ? '今週' : (S.week > mondayOf(new Date()) ? (S.week === addDays(mondayOf(new Date()), 7) ? '来週' : '') : '');
   const showWeek = S.tab !== 'family';
   document.getElementById('top').innerHTML = `<div class="wrap">
     <span class="eyebrow">${titles[S.tab]}</span>
-    ${showWeek ? `<div class="top-row">
+    ${S.tab === 'week' && S.view === 'month' ? (() => { const [y, m] = S.month.split('-').map(Number); return `<div class="top-row">
+      <button class="icon-btn" data-act="mo" data-n="-1" aria-label="前の月">${ICON.left}</button>
+      <div class="week-label">${y}年${m}月${S.month === TODAY.slice(0, 7) ? '<small>今月</small>' : ''}</div>
+      <button class="icon-btn" data-act="mo" data-n="1" aria-label="次の月">${ICON.right}</button>
+    </div>`; })() : showWeek ? `<div class="top-row">
       <button class="icon-btn" data-act="wk" data-n="-7" aria-label="前の週">${ICON.left}</button>
       <div class="week-label">${md(dates[0])} – ${md(dates[6])}${rel ? `<small>${rel}</small>` : ''}</div>
       <button class="icon-btn" data-act="wk" data-n="7" aria-label="次の週">${ICON.right}</button>
@@ -514,7 +543,7 @@ function renderNav() {
 
 function renderView() {
   const v = document.getElementById('view');
-  v.innerHTML = ({ week: viewWeek, sched: viewSched, shop: viewShop, family: viewFamily })[S.tab]();
+  v.innerHTML = ({ week: () => S.view === 'month' ? viewMonth() : viewWeek(), sched: viewSched, shop: viewShop, family: viewFamily })[S.tab]();
 }
 
 /* ---------- 献立のイメージ図 ---------- */
@@ -889,6 +918,8 @@ function weekNutri(dates) {
   const missing = dates.filter(d => S.days[d]?.dishes?.length && !S.days[d].eatOut && !S.days[d].nutri).length;
   return `<div class="card wk-chart"><div class="sec-title"><span>今週の栄養バランス</span></div>
     <div class="wk-stats"><div><b class="num">${tri}<small style="font-size:12px">/${filled.length}日</small></b><span>3色そろった日</span></div><div><b class="num">${fish}<small style="font-size:12px">回</small></b><span>魚の主菜（目安2回〜）</span></div><div><b class="num">${saltOk}<small style="font-size:12px">/${saltN}日</small></b><span>塩分が目安内</span></div></div>
+    ${protSummary(dates)}
+    ${similarIn(dates).length ? `<div class="similar">${similarIn(dates).map(x => `<span>△ 似たメニュー: ${esc(x)}。「料理ごと」→「AIで別の料理に」で差し替えできます</span>`).join('')}</div>` : ''}
     ${whoPicker()}
     <p class="hint" style="margin-top:2px">野菜の量（${esc(whoLabel())} g）。点線が目安の${T.veg}g、棒をタップでその日へ</p>
     <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="曜日ごとの野菜の量">${svg}</svg>
@@ -896,11 +927,90 @@ function weekNutri(dates) {
   </div>`;
 }
 
+/* ---------- 主菜の主材料と似たメニュー ---------- */
+const PROT = [['fish', '魚'], ['beef', '牛・ひき肉'], ['egg', '卵・豆腐'], ['chicken', '鶏'], ['pork', '豚'], ['other', 'その他']];
+const PROT_RE = [['fish', /鮭|サーモン|さば|鯖|ぶり|たら|鱈|さんま|あじ|鯵|いわし|かじき|まぐろ|えび|海老|いか|たこ|ほたて|あさり|しらす|ツナ|魚/], ['chicken', /鶏|チキン|ささみ|手羽/], ['pork', /豚|ポーク|ベーコン|ウインナー/], ['beef', /牛|ひき肉|挽肉|ハンバーグ|ミートソース|ミートボール|そぼろ/], ['egg', /卵|たまご|玉子|豆腐|厚揚げ|油揚げ|大豆|納豆|オムレツ/]];
+function mainOf(day) { return day?.dishes?.find(x => x.role === '主菜') || day?.dishes?.[0] || null; }
+function protOf(day) {
+  const m = mainOf(day); if (!m) return null;
+  for (const [k, re] of PROT_RE) if (re.test(m.name)) return k;
+  const ings = (m.ing || []).filter(i => i.c === '肉・魚' || i.c === '卵・豆腐・乳').map(i => i.n).join(' ');
+  for (const [k, re] of PROT_RE) if (re.test(ings)) return k;
+  return 'other';
+}
+const protLabel = k => PROT.find(p => p[0] === k)?.[1] || 'その他';
+function methodOf(day) {
+  const n = mainOf(day)?.name || '';
+  if (/揚げ|から揚げ|唐揚|フライ|カツ|天ぷら|コロッケ|竜田|南蛮/.test(n)) return '揚げ物';
+  if (/カレー|シチュー|煮|じゃが|おでん|鍋/.test(n)) return '煮物';
+  if (/炒め|チャンプルー|回鍋肉|チンジャオ|生姜焼き|しょうが焼き/.test(n)) return '炒め物';
+  if (/蒸し|レンジ|ホイル/.test(n)) return '蒸し料理';
+  if (/焼き|ソテー|照り|グリル|ステーキ|ハンバーグ|ムニエル|塩焼/.test(n)) return '焼き物';
+  return '';
+}
+function similarIn(dates) {
+  const days = dates.map(d => S.days[d]).filter(d => d?.dishes?.length && !d.eatOut);
+  const by = {}, cnt = {};
+  days.forEach(d => { const p = protOf(d), m = methodOf(d); cnt[p] = (cnt[p] || 0) + 1; if (p !== 'other' && m) (by[p + '|' + m] ||= []).push(d); });
+  const out = [];
+  Object.entries(by).forEach(([k, ds]) => { if (ds.length > 1) { const [p, m] = k.split('|'); out.push(`${protLabel(p)}の${m}が${ds.length}回（${ds.map(d => dowOf(d.date)).join('・')}）`); } });
+  Object.entries(cnt).forEach(([p, n]) => { if (p !== 'other' && p !== 'fish' && n > 2) out.push(`主菜の${protLabel(p)}が${n}回`); });
+  return out;
+}
+function protSummary(dates) {
+  const days = dates.map(d => S.days[d]).filter(d => d?.dishes?.length && !d.eatOut);
+  if (!days.length) return '';
+  const cnt = Object.fromEntries(PROT.map(([k]) => [k, 0])); days.forEach(d => cnt[protOf(d)]++);
+  const shown = PROT.filter(([k]) => cnt[k]);
+  return `<div class="pbar" role="img" aria-label="主菜の主材料: ${shown.map(([k, l]) => l + cnt[k] + '回').join('、')}">${shown.map(([k]) => `<span style="--c:var(--p-${k});flex:${cnt[k]}"></span>`).join('')}</div>
+    <div class="plegend">${shown.map(([k, l]) => `<span class="pchip" style="--c:var(--p-${k})"><i></i>${l}<b>${cnt[k]}</b></span>`).join('')}</div>`;
+}
+function viewToggle() {
+  return `<div class="opt viewtog" role="group" aria-label="表示の切り替え">${[['week', '週で見る'], ['month', '月で見る']].map(([k, l]) => `<button type="button" class="pick" data-act="view" data-v="${k}" aria-pressed="${S.view === k}">${l}</button>`).join('')}</div>`;
+}
+
+/* ---------- 月表示 ---------- */
+function monthGrid() {
+  const [y, m] = S.month.split('-').map(Number);
+  const first = ymd(new Date(y, m - 1, 1)), last = ymd(new Date(y, m, 0));
+  const start = mondayOf(parseD(first)), end = addDays(mondayOf(parseD(last)), 6);
+  const out = []; for (let d = start; d <= end; d = addDays(d, 1)) out.push(d);
+  return { first, last, dates: out };
+}
+function viewMonth() {
+  const { first, last, dates } = monthGrid();
+  const inMonth = dates.filter(d => d >= first && d <= last);
+  const planned = inMonth.filter(d => S.days[d]?.dishes?.length);
+  const missing = inMonth.filter(d => d >= TODAY && !S.days[d]?.dishes?.length && !evItems(d).some(e => e.kind === '外食・夕食なし'));
+  const fish = planned.filter(d => !S.days[d].eatOut && protOf(S.days[d]) === 'fish').length;
+  const eat = planned.filter(d => S.days[d].eatOut).length;
+  let h = viewToggle();
+  h += `<div class="card wk-chart"><div class="sec-title"><span>今月の主菜のバランス</span></div>
+    <div class="wk-stats"><div><b class="num">${planned.length}<small style="font-size:12px">/${inMonth.length}日</small></b><span>献立あり</span></div><div><b class="num">${fish}<small style="font-size:12px">回</small></b><span>魚の主菜</span></div><div><b class="num">${eat}<small style="font-size:12px">回</small></b><span>外食</span></div></div>
+    ${protSummary(inMonth) || '<p class="hint">献立ができると、主菜の主材料（鶏・豚・魚など）の内訳が出ます。</p>'}
+    ${(() => { const ws = []; for (let i = 0; i < dates.length; i += 7) { const w = dates.slice(i, i + 7), sim = similarIn(w); if (sim.length) ws.push(`${md(w[0])}の週: ${sim.join('、')}`); } return ws.length ? `<div class="similar">${ws.map(x => `<span>△ 似たメニュー ${esc(x)}</span>`).join('')}</div>` : ''; })()}
+    ${missing.length ? `<button class="btn small" data-act="gen-open" ${S.sample ? '' : 'disabled'}>${ICON.spark}まだ決まっていない${missing.length}日分をAIでつくる</button>` : ''}
+  </div>`;
+  h += `<div class="mhead" aria-hidden="true">${['月', '火', '水', '木', '金', '土', '日'].map(x => `<span>${x}</span>`).join('')}</div><div class="mgrid">`;
+  dates.forEach(d => {
+    const day = S.days[d], mn = mainOf(day), other = d < first || d > last, eo = day?.eatOut, k = mn && !eo ? protOf(day) : null;
+    const name = mn ? String(mn.name).replace(/（.*?）|\(.*?\)/g, '') : '';
+    const evs = evItems(d).length;
+    h += `<button class="mcell${other ? ' other' : ''}${d === TODAY ? ' today' : ''}${d < TODAY ? ' past' : ''}" data-act="open" data-date="${d}" aria-label="${md(d)}（${dowOf(d)}）${eo ? '外食 ' + esc(eo.genre) : name ? esc(name) : '未定'}">
+      <span class="dn">${parseD(d).getDate()}${evs ? '<span class="ev" title="予定あり"></span>' : ''}</span>
+      ${eo ? `<span class="pchip" style="--c:var(--warn)"><i></i>外食</span><span class="mn struck">${esc(name)}</span>`
+        : mn ? `<span class="pchip" style="--c:var(--p-${k})"><i></i>${protLabel(k)}</span><span class="mn">${esc(name)}</span>`
+        : `<span class="none">${evItems(d).some(e => e.kind === '外食・夕食なし') ? '夕食なし' : other ? '' : '未定'}</span>`}
+    </button>`;
+  });
+  return h + `</div><p class="hint">日付をタップすると、その日の献立と作り方が開きます。オレンジの点は予定がある日です。</p>`;
+}
+
 function viewWeek() {
   const dates = weekDates();
   const anySample = dates.some(d => S.days[d]?.sample);
   const none = dates.every(d => !S.days[d]);
-  let h = '';
+  let h = viewToggle();
   if (anySample) h += `<div class="banner"><p><b>サンプル献立です。</b>家族と予定を登録してから「AIで献立」を押すと、わが家向けに作り直せます。</p></div>`;
   if (!S.family.members.length && !anySample) h += `<div class="banner"><p><b>まず家族を登録しましょう。</b>子どもの年齢や好き嫌いを入れると、AIが取り分けや味付けまで考えます。</p><div><button class="btn small ghost" data-act="tab" data-tab="family">家族を登録する</button></div></div>`;
   if (none && S.loaded) h += `<div class="card empty"><h3>この週の献立はまだありません</h3><p>右下の「AIで献立」から7日分をまとめて作れます。前の日に余った食材を次の日の副菜で使い切るように組み立てます。</p><button class="btn" data-act="gen-open">${ICON.spark}7日分をつくる</button></div>`;
@@ -1203,15 +1313,24 @@ function eventsText(dates) {
 }
 const JSON_RULES = `c(分類)は「肉・魚」「野菜・果物」「卵・豆腐・乳」「主食・乾物」「調味料」「その他」のいずれか。ご飯（白米）は献立に含めない。`;
 
+function nearbyMenus(dates) {
+  const before = [...Array(14)].map((_, i) => addDays(dates[0], -14 + i)), after = [...Array(7)].map((_, i) => addDays(dates[dates.length - 1], i + 1));
+  const line = d => S.days[d]?.dishes?.length && !S.days[d].eatOut ? `- ${d}(${dowOf(d)}): ${S.days[d].dishes.map(x => x.name).join('・')}` : null;
+  const ls = [...before, ...after].map(line).filter(Boolean);
+  return ls.length ? '【直近と前後の献立（同じ・似た料理を避ける）】\n' + ls.join('\n') : '';
+}
 function outlinePrompt(dates, req) {
   return `あなたは日本の家庭料理に詳しい献立プランナーです。次の${dates.length}日分の夕食の献立の骨組みを作ってください。
 対象日（この順番・この日付と曜日で、daysに${dates.length}件ちょうど返す）: ${dates.map(d => d + '(' + dowOf(d) + ')').join('、')}
-fromやtoの曜日は、上の日付と曜日の対応どおりに書く。usesのfromは必ずその日より前の日、carryのtoは必ずその日より後の日にする。7日間で同じ料理・同じ主菜を繰り返さない。
+fromやtoの曜日は、上の日付と曜日の対応どおりに書く。usesのfromは必ずその日より前の日、carryのtoは必ずその日より後の日にする。
 
-【最重要：食材の使い回し】
-- 肉・魚・豆腐・野菜はパック単位（鶏むね2枚、豆腐1丁、キャベツ1/2玉など）で買う前提。ある日に使って残った分を、翌日以降の副菜や汁物で使い切る。
-- 例：月曜の主菜で鶏むね肉を使ったら、火曜の副菜で残りの鶏むね肉を使う。
-- 2日目以降は毎日、少なくとも1つ前日以前の残りを使う。週の終わりに中途半端な食材が残らないようにする。
+【最重要：似たメニューを避ける】
+- 主菜の主材料（鶏・豚・牛/ひき肉・魚・卵/豆腐）を偏らせない。7日間で同じ主材料の主菜は2回まで（魚は2回以上入れる）。
+- 同じ主材料を使う日は、調理法（焼く・揚げる・煮る・蒸す・炒める）と味付け（塩・しょうゆ・みそ・甘辛・トマト・カレー・中華・洋風）を両方変える。例：鶏のから揚げと鶏の竜田揚げ、鶏の照り焼きと鶏の甘辛焼きのような似た料理は同じ週に入れない。
+- 下の「直近と前後の献立」と同じ料理・似た料理も避ける。副菜・汁物も同じものが続かないようにする。
+【食材の使い回し（できる範囲で）】
+- パック単位（鶏むね2枚、豆腐1丁、キャベツ1/2玉など）で買い、残りを別の日の副菜や汁物で使えると節約になる。週に3〜4回程度で十分。
+- 使い回しのために主菜が似てしまうなら、使い回しはしない（usesとcarryは空配列でよい）。メニューの変化を優先する。
 - usesは「この日に使う残り物」、carryは「この日の買い物のうち翌日以降に残すもの」。両方の食材名・量・日付が対応するようにする。
 【栄養】主食・主菜・副菜・汁物をそろえ、赤（肉・魚・卵・豆）・黄（ごはん・いも・油）・緑（野菜・きのこ・海藻）の3色が毎日そろうようにする。魚の主菜を週2回以上。野菜は大人1人1食120g以上。揚げ物は週1回まで。塩分は控えめ（汁物の日は主菜を薄味に）。
 【その他】
@@ -1220,6 +1339,7 @@ fromやtoの曜日は、上の日付と曜日の対応どおりに書く。uses�
 
 ${familyText()}
 ${eventsText(dates)}
+${nearbyMenus(dates)}
 ${req ? '【今回の要望】' + req : ''}
 
 JSONのみで答える:
@@ -1279,13 +1399,32 @@ function aiError(e) {
   return 'AIで作れませんでした（' + (c || 'エラー') + '）。もう一度お試しください';
 }
 
+function sheetGenMonth() {
+  const [y, m] = S.month.split('-').map(Number);
+  const cnt = mode => monthTargets(mode).reduce((a, g) => a + g.dates.length, 0);
+  const miss = cnt('missing'), all = cnt('all');
+  openSheet(`<h3>${y}年${m}月の献立をAIでつくる</h3>
+  ${S.sample ? '' : '<div class="banner"><p><b>この画面ではAIを使えません。</b>claude.aiにサインインした状態で開いてください。</p></div>'}
+  <form id="gen-form" style="display:grid;gap:12px">
+    <p class="hint">今日以降の日を1週間ずつ順に作ります。前の週と同じ・似たメニューにならないように組み、家族のプロフィール・予定・給食も反映します。外食や夕食なしの日は作りません。</p>
+    <div class="opt"><input type="radio" name="mode" id="gm-miss" value="missing" ${miss ? 'checked' : ''}><label for="gm-miss">まだ決まっていない日だけ（${miss}日）</label>
+      <input type="radio" name="mode" id="gm-all" value="all" ${miss ? '' : 'checked'}><label for="gm-all">今日以降を全部作り直す（${all}日）</label></div>
+    <label class="f">今月の要望（任意）<textarea class="inp" id="gen-req" name="req" rows="3" placeholder="例：魚を週2回／月末は節約したい／週末は手の込んだものもOK"></textarea></label>
+    <p class="hint">1週間あたり1〜2分かかります。終わるまでこの画面を開いたままにしてください。</p>
+    <button class="btn block" type="submit" ${S.sample && all ? '' : 'disabled'}>${ICON.spark}月の献立をつくる</button>
+  </form>
+  <ul class="plain prog" id="gen-prog" hidden></ul>`, el => {
+    el.querySelector('form').addEventListener('submit', e => { e.preventDefault(); const f = new FormData(e.target); runMonth(f.get('mode'), String(f.get('req') || '').trim()); });
+  });
+}
 function sheetGen() {
+  if (S.view === 'month' && S.tab === 'week') return sheetGenMonth();
   const dates = weekDates();
   const has = dates.some(d => S.days[d] && !S.days[d].sample);
   openSheet(`<h3>${md(dates[0])}〜${md(dates[6])} の献立をAIでつくる</h3>
   ${S.sample ? '' : '<div class="banner"><p><b>この画面ではAIを使えません。</b>claude.aiにサインインした状態で開いてください。</p></div>'}
   <form id="gen-form" style="display:grid;gap:12px">
-    <p class="hint">家族のプロフィール（${S.family.members.length}人）と、この週の予定（${dates.reduce((a, d) => a + evItems(d).length, 0)}件）をもとに作ります。前の日の残り食材を次の日に使い回します。</p>
+    <p class="hint">家族のプロフィール（${S.family.members.length}人）と、この週の予定（${dates.reduce((a, d) => a + evItems(d).length, 0)}件）をもとに作ります。同じ・似たメニューが続かないように組み、無理のない範囲で食材を使い回します。</p>
     <label class="f">今週の要望（任意）<textarea class="inp" id="gen-req" name="req" rows="3" placeholder="例：魚を2回入れたい／金曜はカレー／冷蔵庫にキャベツ半分と卵がある"></textarea></label>
     ${has ? '<p class="hint" style="color:var(--red)">この週にすでに入っている献立は上書きされます。</p>' : ''}
     <button class="btn block" type="submit" ${S.sample ? '' : 'disabled'}>${ICON.spark}7日分をつくる</button>
@@ -1299,43 +1438,87 @@ function renderProg() {
   ul.hidden = false;
   ul.innerHTML = S.gen.map(s => `<li><span class="dot ${s.st}"></span><span>${esc(s.label)}</span></li>`).join('');
 }
-async function runWeek(req) {
-  if (!S.sample || S.gen) return;
-  const form = document.getElementById('gen-form'); if (form) form.hidden = true;
-  const dates = weekDates();
-  S.gen = [{ label: '1週間の流れと使い回しを考える', st: 'run' }, ...dates.map(d => ({ label: `${md(d)}（${dowOf(d)}）のレシピと段取り`, st: '' }))];
-  renderProg();
+// 指定した日付の献立をまとめて作る（骨組み → 各日のレシピ）。onStep(番号, 状態, 追記) で進み具合を伝える
+async function genDays(dates, req, onStep) {
+  onStep(0, 'run');
   let outline;
   try {
     outline = await S.sample.json(outlinePrompt(dates, req), { modelTier: 'complex' });
     if (!Array.isArray(outline?.days)) throw { code: 'invalid_json' };
-    S.gen[0].st = 'ok';
-  } catch (e) { S.gen[0].st = 'ng'; renderProg(); toast(aiError(e)); S.gen = null; if (form) form.hidden = false; return; }
-  renderProg();
+    onStep(0, 'ok');
+  } catch (e) { onStep(0, 'ng'); throw e; }
   // 日付がずれて返ってきても同じ骨組みを2日に使わないよう、日付が全部そろっているときだけ日付で、それ以外は順番で対応させる
   const od = outline.days.filter(x => x && typeof x === 'object');
   const exact = dates.every(d => od.filter(x => x.date === d).length === 1);
   const byDate = exact ? Object.fromEntries(od.map(x => [x.date, x])) : Object.fromEntries(dates.map((d, i) => [d, od[i]]));
   const mains = dates.map(d => (byDate[d]?.dishes || []).map(x => x.name).join('・')).map((m, i) => m ? `${dowOf(dates[i])}: ${m}` : '').filter(Boolean).join(' / ');
-  let ok = 0;
+  let ok = 0, failed = 0, fatal = null;
   const queue = dates.map((d, i) => ({ d, i, o: byDate[d] ? { ...byDate[d], date: d } : null }));
   const worker = async () => {
     while (queue.length) {
       const { d, i, o } = queue.shift();
-      if (o && Array.isArray(o.dishes) && !o.dishes.length) { S.gen[i + 1].st = 'ok'; S.gen[i + 1].label += '（夕食なし）'; renderProg(); deleteDay(d); continue; }
-      S.gen[i + 1].st = 'run'; renderProg();
+      if (o && Array.isArray(o.dishes) && !o.dishes.length) { onStep(i + 1, 'ok', '（夕食なし）'); deleteDay(d); ok++; continue; }
+      onStep(i + 1, 'run');
       try {
-        const r = await S.sample.json(detailPrompt(d, o, '', '', (req ? req + '\n' : '') + '（この週のほかの日の献立: ' + mains + '。これらと同じ料理にしない）'), { modelTier: 'default' });
-        await saveDay(d, cleanDay(d, r, o)); S.gen[i + 1].st = 'ok'; ok++;
-      } catch (e) { S.gen[i + 1].st = 'ng'; if (e?.code === 'rate_limited' || e?.code === 'not_granted') { toast(aiError(e)); queue.length = 0; } }
-      renderProg();
+        const r = await S.sample.json(detailPrompt(d, o, '', '', (req ? req + '\n' : '') + '（この期間のほかの日の献立: ' + mains + '。これらと同じ・似た料理にしない）'), { modelTier: 'default' });
+        await saveDay(d, cleanDay(d, r, o)); onStep(i + 1, 'ok'); ok++;
+      } catch (e) { onStep(i + 1, 'ng'); failed++; if (e?.code === 'rate_limited' || e?.code === 'not_granted') { fatal = e; queue.length = 0; } }
     }
   };
   await Promise.all([worker(), worker(), worker()]);
-  const failed = S.gen.filter(s => s.st === 'ng').length;
+  if (fatal) throw fatal;
+  return { ok, failed };
+}
+function similarToast(dates) {
+  const sim = similarIn(dates);
+  if (sim.length) setTimeout(() => toast('似たメニューがあります: ' + sim[0] + '。「AIで別の料理に」で差し替えできます'), 3400);
+}
+async function runWeek(req) {
+  if (!S.sample || S.gen) return;
+  const form = document.getElementById('gen-form'); if (form) form.hidden = true;
+  const dates = weekDates();
+  S.gen = [{ label: '1週間の流れとメニューのバランスを考える', st: '' }, ...dates.map(d => ({ label: `${md(d)}（${dowOf(d)}）のレシピと段取り`, st: '' }))];
+  renderProg();
+  try {
+    const { ok, failed } = await genDays(dates, req, (i, st, x) => { S.gen[i].st = st; if (x) S.gen[i].label += x; renderProg(); });
+    S.gen = null;
+    toast(failed ? `${ok}日分できました。${failed}日分は失敗したので、その日を開いて「AIで作る」を押してください` : '7日分の献立ができました');
+    if (!failed) closeSheet();
+    similarToast(dates);
+  } catch (e) { S.gen = null; toast(aiError(e)); if (form) form.hidden = false; }
+}
+function monthTargets(mode) {
+  const { first, last } = monthGrid();
+  const out = [];
+  for (let d = first; d <= last; d = addDays(d, 1)) {
+    if (d < TODAY || evItems(d).some(e => e.kind === '外食・夕食なし') || S.days[d]?.eatOut) continue;
+    if (mode === 'all' || !S.days[d]?.dishes?.length) out.push(d);
+  }
+  const weeks = [];
+  out.forEach(d => { const w = mondayOf(parseD(d)); const g = weeks.find(x => x.w === w); if (g) g.dates.push(d); else weeks.push({ w, dates: [d] }); });
+  return weeks;
+}
+async function runMonth(mode, req) {
+  if (!S.sample || S.gen) return;
+  const weeks = monthTargets(mode); if (!weeks.length) { toast('作る日がありません'); return; }
+  const form = document.getElementById('gen-form'); if (form) form.hidden = true;
+  S.gen = weeks.map(g => ({ label: `${md(g.dates[0])}〜${md(g.dates[g.dates.length - 1])}（${g.dates.length}日）`, st: '' }));
+  renderProg();
+  let ok = 0, failed = 0;
+  for (let k = 0; k < weeks.length; k++) {
+    const g = weeks[k], base = S.gen[k].label; let done = 0;
+    S.gen[k].st = 'run'; S.gen[k].label = base + ' バランスを考え中'; renderProg();
+    try {
+      const r = await genDays(g.dates, req, (i, st) => { if (i > 0 && (st === 'ok' || st === 'ng')) { done++; S.gen[k].label = `${base} ${done}/${g.dates.length}日`; renderProg(); } });
+      ok += r.ok; failed += r.failed; S.gen[k].st = r.failed ? 'ng' : 'ok';
+    } catch (e) { S.gen[k].st = 'ng'; renderProg(); toast(aiError(e)); failed += g.dates.length; if (e?.code === 'rate_limited' || e?.code === 'not_granted') break; }
+    S.gen[k].label = base; renderProg();
+  }
   S.gen = null;
-  toast(failed ? `${ok}日分できました。${failed}日分は失敗したので、その日を開いて「AIで作る」を押してください` : '7日分の献立ができました');
+  toast(failed ? `${ok}日分できました。${failed}日分は作れなかったので、その日を開いて「AIで作る」を押してください` : `${ok}日分の献立ができました`);
   if (!failed) closeSheet();
+  const { dates } = monthGrid(); const sim = []; for (let i = 0; i < dates.length; i += 7) sim.push(...similarIn(dates.slice(i, i + 7)));
+  if (sim.length) setTimeout(() => toast('似たメニューがあります: ' + sim[0] + '。月の画面で確認できます'), 3400);
 }
 async function regenDay(req) {
   if (!S.sample) return;
@@ -1640,6 +1823,8 @@ document.addEventListener('click', e => {
   switch (a) {
     case 'tab': closeSheet(); S.tab = t.dataset.tab; S.day = null; try { localStorage.setItem('kondate.tab', S.tab); } catch (err) {} render(); window.scrollTo(0, 0); break;
     case 'wk': S.week = addDays(S.week, +t.dataset.n); render(); break;
+    case 'mo': { const [y, m] = S.month.split('-').map(Number); const d = new Date(y, m - 1 + +t.dataset.n, 1); S.month = ymd(d).slice(0, 7); render(); break; }
+    case 'view': S.view = t.dataset.v; if (S.view === 'month') S.month = addDays(S.week, 3).slice(0, 7); else S.week = S.month === TODAY.slice(0, 7) ? mondayOf(new Date()) : mondayOf(parseD(S.month + '-01')); try { localStorage.setItem('kondate.view', S.view); } catch (err) {} render(); window.scrollTo(0, 0); break;
     case 'open': S.day = t.dataset.date; S.dayTab = 'all'; S.dish = 0; render(); break;
     case 'close-day': S.day = null; render(); break;
     case 'daytab': S.dayTab = t.dataset.t; renderOverlay(); document.querySelector('.overlay').scrollTop = 0; break;
