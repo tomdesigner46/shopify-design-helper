@@ -496,18 +496,33 @@ function parseQty(q) {
 }
 const fmtN = v => { const r = Math.round(v * 100) / 100; const f = { 0.25: '1/4', 0.5: '1/2', 0.75: '3/4', 0.33: '1/3', 0.67: '2/3' }; if (r < 1 && f[r]) return f[r]; return String(r); };
 
+// 分量からかっこ書きのメモ（買う量・翌日用など）を外して「2個」「300g」だけにする
+function qShort(q) { const t = String(q || '').replace(/[（(][^）)]*[）)]/g, '').replace(/[、。].*$/, '').trim(); return t || String(q || '').trim(); }
+const NOT_BUY = /^(水|お湯|湯|熱湯|氷|水溶き片栗粉)$/;
+function sumIng(list) {
+  const map = new Map();
+  list.forEach(i => {
+    const name = String(i.n || '').replace(/[（(][^）)]*[）)]/g, '').trim(); if (!name || NOT_BUY.test(name)) return;
+    const key = name.replace(/\s/g, '');
+    if (!map.has(key)) map.set(key, { name, cat: CATS.includes(i.c) ? i.c : 'その他', units: {}, raw: [], left: true });
+    const it = map.get(key); if (!i.left) it.left = false;
+    const p = parseQty(i.q);
+    if (p) it.units[p.u] = (it.units[p.u] || 0) + p.v; else if (i.q) it.raw.push(qShort(i.q));
+  });
+  return [...map.values()].map(it => ({ ...it, qty: [...Object.entries(it.units).map(([u, v]) => fmtN(v) + u), ...new Set(it.raw)].join(' + ') }));
+}
 function shoppingList() {
   const map = new Map();
   weekDates().forEach(date => {
     const day = S.days[date]; if (!day || day.eatOut) return;
     (day.dishes || []).forEach(dish => (dish.ing || []).forEach(i => {
-      const name = String(i.n || '').trim(); if (!name) return;
+      const name = String(i.n || '').replace(/[（(][^）)]*[）)]/g, '').trim(); if (!name || NOT_BUY.test(name)) return;
       const cat = CATS.includes(i.c) ? i.c : 'その他';
       const key = name.replace(/\s/g, '');
       if (!map.has(key)) map.set(key, { name, cat, units: {}, raw: [], days: new Set() });
       const it = map.get(key); it.days.add(dowOf(date));
       const p = parseQty(i.q);
-      if (p) it.units[p.u] = (it.units[p.u] || 0) + p.v; else if (i.q) it.raw.push(i.q);
+      if (p) it.units[p.u] = (it.units[p.u] || 0) + p.v; else if (i.q) it.raw.push(qShort(i.q));
     }));
   });
   return [...map.values()].map(it => ({ ...it, qty: [...Object.entries(it.units).map(([u, v]) => fmtN(v) + u), ...[...new Set(it.raw)]].join(' + ') }));
@@ -1153,7 +1168,7 @@ function dayAll(day, date) {
     h += `<div class="sec-title"><span>材料まとめ（${esc(day.servings || servingsLabel())}）</span></div><div class="card">`;
     CATS.forEach(cat => {
       const rs = rows.filter(r => (CATS.includes(r.c) ? r.c : 'その他') === cat); if (!rs.length) return;
-      h += `<div class="ing-group"><h4>${cat}</h4>${rs.map(r => `<div class="ing"><span>${esc(r.n)}${r.left ? `<span class="left">残り物</span>` : ''}<span class="for">${esc(r.dish)}</span></span><span class="q">${esc(r.q || '')}</span></div>`).join('')}</div>`;
+      h += `<div class="ing-group"><h4>${cat}</h4>${sumIng(rs).map(r => `<div class="ing"><span>${esc(r.name)}${r.left ? `<span class="left">残り物</span>` : ''}</span><span class="q">${esc(r.qty)}</span></div>`).join('')}</div>`;
     });
     h += '</div>';
   }
@@ -1179,7 +1194,7 @@ function dayDish(day, date) {
   let h = `<div class="dish-pills" role="tablist">${dishes.map((y, j) => `<button role="tab" data-act="dish-pick" data-i="${j}" aria-selected="${j === i}">${esc(y.role)}・${esc(y.name)}</button>`).join('')}</div>`;
   h += `<div class="card"><div class="dish-head"><span class="role">${esc(x.role)}</span><h3>${esc(x.name)}</h3>
     <div class="chips">${x.min ? `<span class="chip min">約${x.min}分</span>` : ''}<span class="chip min">${esc(day.servings || servingsLabel())}</span>${(x.ing || []).some(r => r.left) ? '<span class="chip gold">残り物をつかう</span>' : ''}</div></div>
-    <p class="sub-h">材料</p><div class="ing-group" style="padding-top:4px">${(x.ing || []).map(r => `<div class="ing"><span>${esc(r.n)}${r.left ? `<span class="left">${esc(typeof r.left === 'string' ? r.left : '残り物')}</span>` : ''}</span><span class="q">${esc(r.q || '')}</span></div>`).join('') || '<p class="hint">材料が入っていません</p>'}</div>
+    <p class="sub-h">材料</p><div class="ing-group" style="padding-top:4px">${(x.ing || []).map(r => `<div class="ing"><span>${esc(r.n)}${r.left ? `<span class="left">残り物</span>` : ''}</span><span class="q">${esc(qShort(r.q))}</span></div>`).join('') || '<p class="hint">材料が入っていません</p>'}</div>
     <p class="sub-h">作り方</p><ol class="plain steps">${(x.steps || []).map(s => `<li><span>${esc(s)}</span></li>`).join('') || '<li><span class="hint">手順が入っていません</span></li>'}</ol>
     ${x.kid ? `<div class="kid" style="border-top:1px solid var(--line)"><span class="who">子どもの分</span><p>${esc(x.kid)}</p></div>` : ''}
   </div>
@@ -1360,7 +1375,7 @@ ${eventsText([date])}
 ${req ? '【要望】' + req : ''}
 
 ルール:
-- 材料は${servingsLabel()}の使う分量（g・個・枚・大さじ等）。残り物から使う材料には "left":"月の主菜の残り" のように付ける。翌日に残す食材は、この日の材料に買う量全体を書き、qの後ろに（半分は翌日用）などと書かない（qは使う量だけ）。
+- 材料は${servingsLabel()}の使う分量（g・個・枚・大さじ等）。残り物から使う材料には "left":"月の主菜の残り" のように付ける。qは「2個」「300g」「大さじ1」のように分量だけを書き、（買う量は〜）（翌日用）などのメモやかっこ書きは付けない。
 - stepsは1手順1文で4〜6手順。火加減と時間を具体的に。
 - flowは3品を同時に効率よく作る段取り（下ごしらえまとめ・並行作業・煮込み中に別の料理）。各手順にどの料理か(d: "主菜"など)と目安の分(min)。5〜9手順。
 - kidは子どもへの取り分け・味付け・切り方の工夫を1〜2文（登録された子どもの名前と年齢に合わせる。子どもがいなければ空文字）。
@@ -1379,7 +1394,7 @@ function cleanNutri(n) {
 function cleanDay(date, r, o) {
   const dishes = (Array.isArray(r?.dishes) ? r.dishes : []).map(x => ({
     role: ROLES.includes(x.role) ? x.role : '副菜', name: String(x.name || ''), min: Number(x.min) || '',
-    ing: (Array.isArray(x.ing) ? x.ing : []).map(i => ({ n: String(i.n || ''), q: String(i.q || ''), c: CATS.includes(i.c) ? i.c : guessCat(String(i.n || '')), ...(i.left ? { left: String(i.left) } : {}) })).filter(i => i.n),
+    ing: (Array.isArray(x.ing) ? x.ing : []).map(i => ({ n: String(i.n || '').replace(/[（(][^）)]*[）)]/g, '').trim(), q: qShort(i.q), c: CATS.includes(i.c) ? i.c : guessCat(String(i.n || '')), ...(i.left ? { left: String(i.left) } : {}) })).filter(i => i.n),
     steps: (Array.isArray(x.steps) ? x.steps : []).map(String), kid: String(x.kid || ''),
   })).filter(x => x.name);
   const arr = (a, k) => (Array.isArray(a) ? a : []).map(v => ({ n: String(v.n || ''), q: String(v.q || ''), [k]: String(v[k] || '') })).filter(v => v.n);
