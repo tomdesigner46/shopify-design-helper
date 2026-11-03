@@ -410,9 +410,9 @@ try { const t = localStorage.getItem('kondate.tab'); if (t) S.tab = t; S.nutWho 
 
 /* ---------- persistence ---------- */
 async function put(path, data) {
-  if (!S.db) return;
-  try { await S.db.doc(path).set(data); }
-  catch (e) { toast(e.code === 'permission_denied' ? '編集権限がないため保存できません。共有設定で編集者にしてもらってください' : '保存できませんでした。通信を確認してもう一度お試しください'); }
+  if (!S.db) return false;
+  try { await S.db.doc(path).set(data); return true; }
+  catch (e) { return toast(e.code === 'permission_denied' ? '編集権限がないため保存できません。共有設定で編集者にしてもらってください' : '保存できませんでした。通信を確認してもう一度お試しください'), false; }
 }
 function saveDay(date, doc) {
   doc.date = date; doc.updatedAt = Date.now(); if (S.me) doc.updatedBy = S.me;
@@ -1061,6 +1061,8 @@ function viewSched() {
   let h = `<div class="card lunch-card"><h3>子どもの給食・園の献立</h3>
     <p class="hint">献立表のプリントを撮るか、PDFを選ぶだけで日付ごとに取り込みます。夕食は、その日の昼と同じ料理や食材が続かないように組みます。</p>
     <button class="btn" data-act="imp-open">${ICON.camera}献立表を読み込む</button>
+    ${(() => { const cf = upcomingLunchConflicts(); return cf.length ? `<div class="similar">${cf.slice(0, 5).map(([d, c]) => `<span>△ ${md(d)}（${dowOf(d)}）${esc(c.join('、'))}</span>`).join('')}${cf.length > 5 ? `<span>ほか${cf.length - 5}日</span>` : ''}</div>
+      <button class="btn small ghost" data-act="lunch-fix" ${S.sample && !S.fixing ? '' : 'disabled'}>${ICON.spark}給食とかぶる夕食をAIで作り直す（${cf.length}日）</button>` : ''; })()}
     ${docs.length ? `<div class="menus-list">${docs.map(([id, d]) => `<div class="ev"><span class="txt"><span class="who">${esc(memberName(d.who) || '子ども')}</span>${esc(monthLabel(d.month))}の${esc(d.source || '給食')}<small>${Object.keys(d.items || {}).length}日分</small></span><button class="x" data-act="imp-del" data-id="${esc(id)}" aria-label="この献立表を消す">×</button></div>`).join('')}</div>` : ''}
   </div>
   ${Object.keys(S.recurring).length ? `<div class="card lunch-card"><h3>毎週の予定</h3><div class="menus-list">${Object.values(S.recurring).map(r => `<div class="ev"><span class="txt">${REP_MARK}<span class="who">${esc(memberName(r.who) || '家族')}</span>毎週${esc(dowsLabel(r.dows))} ${esc(r.kind)}${r.memo ? `<small>（${esc(r.memo)}）</small>` : ''}</span><button class="x" data-act="rep-del" data-rid="${esc(r.id)}" aria-label="この毎週の予定をやめる">×</button></div>`).join('')}</div></div>` : ''}
@@ -1139,9 +1141,53 @@ function renderOverlay() {
   document.body.style.overflow = 'hidden';
 }
 
+// 給食と夕食のかぶりを調べる（同じ料理名、または同じ主材料）
+function protOfText(t) { for (const [k, re] of PROT_RE) if (re.test(t)) return k; return null; }
+function lunchConflict(date) {
+  const day = S.days[date]; if (!day?.dishes?.length || day.eatOut) return null;
+  const ls = lunchFor(date); if (!ls.length) return null;
+  const dn = day.dishes.map(x => String(x.name).replace(/（.*?）|\(.*?\)/g, ''));
+  const dinnerProt = protOf(day);
+  const hits = [];
+  ls.forEach(l => {
+    const who = memberName(l.who) || '子ども';
+    l.menu.split(/[・、,，\s]+/).filter(x => x.length >= 3 && !/ごはん|ご飯|パン|牛乳|麦ごはん/.test(x)).forEach(ld => {
+      dn.forEach(n => { if (n.includes(ld) || ld.includes(n)) hits.push(`${who}の給食と同じ「${ld}」`); });
+    });
+    const lp = protOfText(l.main || '');
+    if (lp && lp !== 'other' && lp === dinnerProt) hits.push(`${who}の給食も主菜が${protLabel(lp)}`);
+  });
+  return hits.length ? [...new Set(hits)] : null;
+}
+function upcomingLunchConflicts() {
+  const out = []; for (let i = 0; i < 31; i++) { const d = addDays(TODAY, i); const c = lunchConflict(d); if (c) out.push([d, c]); }
+  return out;
+}
+async function fixLunchConflicts() {
+  if (!S.sample || S.fixing) return;
+  const list = upcomingLunchConflicts(); if (!list.length) return;
+  S.fixing = true; render();
+  let ok = 0;
+  for (const [date] of list) {
+    toast(`${md(date)}の夕食を作り直しています…（${ok + 1}/${list.length}）`);
+    const prev = S.days[addDays(date, -1)], next = S.days[addDays(date, 1)];
+    const lunch = lunchFor(date).map(l => (memberName(l.who) || '子ども') + 'の' + l.src + '「' + l.menu + '」').join('、');
+    try {
+      const r = await S.sample.json(detailPrompt(date, null, (prev?.carry || []).map(c => c.n + ' ' + c.q).join('、'), (next?.uses || []).map(u => u.n + ' ' + u.q).join('、'),
+        `子どもたちの昼ごはん（${lunch}）と同じ料理・同じ主材料を避けて、昼に少ない食材（野菜・魚など）を補う献立にする。${nearbyMenus([date])}`), { modelTier: 'default' });
+      const doc = cleanDay(date, r, null); if (!doc.dishes.length) throw { code: 'invalid_json' };
+      await saveDay(date, doc); ok++;
+    } catch (e) { if (e?.code === 'rate_limited' || e?.code === 'not_granted') { toast(aiError(e)); break; } }
+  }
+  S.fixing = false; render();
+  const left = upcomingLunchConflicts().length;
+  toast(left ? `${ok}日分を作り直しました。まだ${left}日かぶっているので、その日を開いて「AIで別の料理に」で差し替えてください` : `${ok}日分の夕食を給食とかぶらない献立にしました`);
+}
 function lunchCard(date) {
   const ls = lunchFor(date); if (!ls.length) return '';
-  return `<div class="card lunch-day"><span class="sec-title" style="font-size:12px"><span>子どもの昼ごはん</span></span>${ls.map(l => `<p><b>${esc(memberName(l.who) || '子ども')}・${esc(l.src)}</b>${esc(l.menu)}</p>`).join('')}</div>`;
+  const cf = lunchConflict(date);
+  return `<div class="card lunch-day"><span class="sec-title" style="font-size:12px"><span>子どもの昼ごはん</span></span>${ls.map(l => `<p><b>${esc(memberName(l.who) || '子ども')}・${esc(l.src)}</b>${esc(l.menu)}</p>`).join('')}
+    ${cf ? `<p class="st warn" style="margin:0">△ ${esc(cf.join('、'))}。「この日をAIで作り直す」で給食とかぶらない献立にできます</p>` : ''}</div>`;
 }
 function eatOutCard(day, date) {
   const eo = day.eatOut;
@@ -1713,15 +1759,23 @@ async function saveImport() {
   const byMonth = {};
   rows.forEach(r => { (byMonth[r.date.slice(0, 7)] ||= {})[r.date] = { menu: r.menu, main: r.main }; });
   const writes = [];
+  // 保存先の名前には英数字しか使えないので、種類は英字に置き換える（子ども・月・種類ごとに1件）
+  const code = { 給食: 'lunch', 保育園: 'nursery', 幼稚園: 'kinder' }[IMP.source] || 'other';
   IMP.who.forEach(who => Object.entries(byMonth).forEach(([month, items]) => {
-    const id = who + '_' + month + '_' + IMP.source;
+    const id = who + '_' + month + '_' + code;
     const prev = S.kidmenus[id]?.items || {};
     const doc = { who, month, source: IMP.source, items: { ...prev, ...items }, updatedAt: Date.now() };
-    S.kidmenus[id] = doc; writes.push(put('kidmenus/' + id, doc));
+    S.kidmenus[id] = doc; writes.push(put('kidmenus/' + id, doc).then(ok => { if (!ok && S.db) delete S.kidmenus[id]; return ok; }));
   }));
   closeSheet(); render();
-  await Promise.all(writes);
-  toast(`${rows.length}日分の${IMP.source}を保存しました`);
+  const res = await Promise.all(writes);
+  render();
+  const names = IMP.who.map(memberName).join('・');
+  if (res.every(Boolean)) {
+    toast(`${names}の${IMP.source}（${rows.length}日分）を保存しました`);
+    const cf = upcomingLunchConflicts();
+    if (cf.length) setTimeout(() => toast(`給食と夕食がかぶっている日が${cf.length}日あります。「予定」タブから作り直せます`), 3400);
+  }
   IMP.rows = null; IMP.files = [];
 }
 
@@ -1868,6 +1922,7 @@ document.addEventListener('click', e => {
     case 'mem-edit': sheetMember(t.dataset.id); break;
     case 'mem-del': S.family.members = S.family.members.filter(m => m.id !== t.dataset.id); saveFamily(); closeSheet(); break;
     case 'copy-shop': copyShop(); break;
+    case 'lunch-fix': fixLunchConflicts(); break;
     case 'nutri-calc': calcNutri([S.day]); break;
     case 'nut-who': S.nutWho = t.dataset.id; try { localStorage.setItem('kondate.nutWho', S.nutWho); } catch (err) {} render(); break;
     case 'eo-open': sheetEatOut(S.day); break;
