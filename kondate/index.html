@@ -1401,7 +1401,7 @@ fromやtoの曜日は、上の日付と曜日の対応どおりに書く。uses�
 ${familyText()}
 ${eventsText(dates)}
 ${nearbyMenus(dates)}
-${req ? '【今回の要望】' + req : ''}
+${reqBlock(req)}
 
 JSONのみで答える:
 {"days":[{"date":"YYYY-MM-DD","theme":"その日のひとこと(15字以内)","dishes":[{"role":"主菜","name":"鶏むね肉のねぎ塩焼き"},{"role":"副菜","name":"…"},{"role":"汁物","name":"…"}],"uses":[{"n":"鶏むね肉","q":"1枚","from":"月の主菜"}],"carry":[{"n":"鶏むね肉","q":"1枚","to":"火の副菜"}]}]}
@@ -1418,7 +1418,7 @@ ${prevCarry ? '前の日から回ってくる食材（使い切ってくださ�
 ${nextUses ? '翌日が使う予定の残り物（この日に多めに買って残す）: ' + nextUses : ''}
 ${familyText()}
 ${eventsText([date])}
-${req ? '【要望】' + req : ''}
+${reqBlock(req)}
 
 ルール:
 - 材料は${servingsLabel()}の使う分量（g・個・枚・大さじ等）。残り物から使う材料には "left":"月の主菜の残り" のように付ける。qは「2個」「300g」「大さじ1」のように分量だけを書き、（買う量は〜）（翌日用）などのメモやかっこ書きは付けない。
@@ -1429,7 +1429,7 @@ ${req ? '【要望】' + req : ''}
 - ${JSON_RULES}
 
 JSONのみで答える:
-{"theme":"…","dishes":[{"role":"主菜","name":"…","min":20,"ing":[{"n":"鶏むね肉","q":"1枚(250g)","c":"肉・魚"}],"steps":["…"],"kid":"…"}],"flow":[{"t":"…","d":"主菜","min":5}],"uses":[{"n":"…","q":"…","from":"…"}],"carry":[{"n":"…","q":"…","to":"…"}],"nutri":{"kcal":680,"protein":28,"fat":20,"carb":95,"veg":140,"salt":2.4,"note":"…"},"tip":"節約・使い切りのひとこと(40字以内)"}`;
+{"avoid":[],"theme":"…","dishes":[{"role":"主菜","name":"…","min":20,"ing":[{"n":"鶏むね肉","q":"1枚(250g)","c":"肉・魚"}],"steps":["…"],"kid":"…"}],"flow":[{"t":"…","d":"主菜","min":5}],"uses":[{"n":"…","q":"…","from":"…"}],"carry":[{"n":"…","q":"…","to":"…"}],"nutri":{"kcal":680,"protein":28,"fat":20,"carb":95,"veg":140,"salt":2.4,"note":"…"},"tip":"節約・使い切りのひとこと(40字以内)"}`;
 }
 function cleanNutri(n) {
   if (!n || typeof n !== 'object') return null;
@@ -1456,6 +1456,7 @@ function aiError(e) {
   const c = e?.code;
   if (c === 'not_granted' || c === 'sampling_disabled' || c === 'capability_disabled') return 'このページでAIを使う許可がありません。ページ右上のメニューから許可してください';
   if (c === 'rate_limited') return 'AIの利用が混み合っています。少し待ってからもう一度お試しください';
+  if (c === 'avoid_failed') return `${(e.words || []).join('、')}を使わない料理を作れませんでした。要望の書き方を変えてもう一度お試しください`;
   if (c === 'invalid_json') return 'AIの返答を読み取れませんでした。もう一度お試しください';
   return 'AIで作れませんでした（' + (c || 'エラー') + '）。もう一度お試しください';
 }
@@ -1521,7 +1522,7 @@ async function genDays(dates, req, onStep) {
       if (o && Array.isArray(o.dishes) && !o.dishes.length) { onStep(i + 1, 'ok', '（夕食なし）'); deleteDay(d); ok++; continue; }
       onStep(i + 1, 'run');
       try {
-        const r = await S.sample.json(detailPrompt(d, o, '', '', (req ? req + '\n' : '') + '（この期間のほかの日の献立: ' + mains + '。これらと同じ・似た料理にしない）'), { modelTier: 'default' });
+        const r = await askAvoiding(detailPrompt(d, o, '', '', (req ? req + '\n' : '') + '（この期間のほかの日の献立: ' + mains + '。これらと同じ・似た料理にしない）'), r => r?.dishes);
         await saveDay(d, cleanDay(d, r, o)); onStep(i + 1, 'ok'); ok++;
       } catch (e) { onStep(i + 1, 'ng'); failed++; if (e?.code === 'rate_limited' || e?.code === 'not_granted') { fatal = e; queue.length = 0; } }
     }
@@ -1581,6 +1582,28 @@ async function runMonth(mode, req) {
   const { dates } = monthGrid(); const sim = []; for (let i = 0; i < dates.length; i += 7) sim.push(...similarIn(dates.slice(i, i + 7)));
   if (sim.length) setTimeout(() => toast('似たメニューがあります: ' + sim[0] + '。月の画面で確認できます'), 3400);
 }
+// 要望（「豆腐がない」など）をいちばん優先させる
+function reqBlock(req) {
+  return req ? `【最優先：家族からの要望】${req}
+要望の中で「ない」「切らしている」「使えない」「使わない」「苦手」とされた食材は、残り物の指定やほかのどの条件よりも優先して、材料・料理名のどこにも絶対に使わない（別の食材で代える）。そうした食材名をavoidに書き出す（なければ空配列）。` : '';
+}
+const AVOID_VAR = { 豆腐: ['豆腐', 'とうふ', 'トウフ'], 卵: ['卵', 'たまご', '玉子', 'タマゴ', 'エッグ'], たまご: ['卵', 'たまご', '玉子'], 玉ねぎ: ['玉ねぎ', 'たまねぎ', '玉葱', 'タマネギ', 'オニオン'], ねぎ: ['ねぎ', 'ネギ', '葱'], 牛乳: ['牛乳', 'ミルク'], 鶏肉: ['鶏', 'チキン'], 豚肉: ['豚', 'ポーク'], 牛肉: ['牛', 'ビーフ'] };
+function avoidHits(dishes, avoid) {
+  const text = (dishes || []).map(x => (x?.name || '') + ' ' + (x?.ing || []).map(i => i?.n || '').join(' ')).join(' ');
+  return avoid.filter(w => (AVOID_VAR[w] || [w]).some(v => v && text.includes(v)));
+}
+// AIに聞き、使えない食材が入っていたら1回だけ聞き直す
+async function askAvoiding(prompt, pick) {
+  let r = await S.sample.json(prompt, { modelTier: 'default' });
+  const avoid = [...new Set((Array.isArray(r?.avoid) ? r.avoid : []).map(x => String(x).trim()).filter(Boolean))];
+  let bad = avoidHits(pick(r), avoid);
+  if (bad.length) {
+    r = await S.sample.json(prompt + `\n\n【やり直し】前回の答えに使えない食材（${bad.join('、')}）が入っていました。${avoid.join('、')}を材料にも料理名にも一切使わない料理に変えて、もう一度JSONで答えてください。`, { modelTier: 'default' });
+    bad = avoidHits(pick(r), avoid);
+    if (bad.length) throw { code: 'avoid_failed', words: bad };
+  }
+  return r;
+}
 async function regenDay(req) {
   if (!S.sample) return;
   const date = S.day;
@@ -1589,7 +1612,7 @@ async function regenDay(req) {
   const nextUses = (next?.uses || []).map(u => u.n + ' ' + u.q).join('、');
   toast('AIが' + md(date) + 'の献立を考えています…');
   try {
-    const r = await S.sample.json(detailPrompt(date, null, prevCarry, nextUses, req), { modelTier: 'default' });
+    const r = await askAvoiding(detailPrompt(date, null, prevCarry, nextUses, req), r => r?.dishes);
     const doc = cleanDay(date, r, null); if (!doc.dishes.length) throw { code: 'invalid_json' };
     S.dish = 0; await saveDay(date, doc); toast('作り直しました');
   } catch (e) { toast(aiError(e)); }
@@ -1613,16 +1636,16 @@ function sheetSwap(i) {
       toast('AIが別の料理を考えています…');
       const others = day.dishes.filter((_, j) => j !== i).map(y => y.role + '「' + y.name + '」').join('、');
       const lefts = (x.ing || []).filter(r => r.left).map(r => r.n + ' ' + r.q + '（' + r.left + '）').join('、');
-      const p = `日本の家庭の夕食で、${x.role}「${x.name}」を別の料理に差し替えてください。${servingsLabel()}。
+      const p = `${reqBlock(req)}
+日本の家庭の夕食で、${x.role}「${x.name}」を別の料理に差し替えてください。${servingsLabel()}。
 ほかの料理: ${others || 'なし'}
-${lefts ? '必ず使う残り物: ' + lefts : ''}
+${lefts ? '使えると節約になる残り物（要望と合わなければ使わない）: ' + lefts : ''}
 ${familyText()}
-${req ? '【要望】' + req : ''}
 ほかの料理と味や食材がかぶらないようにし、3品で栄養のバランス（野菜120g以上、塩分2.5g以下、赤・黄・緑の3色）が取れるようにする。新しい料理を含めた3品の段取り(flow)と、ご飯150gを含む大人1人分の栄養推定(nutri)も作り直す。${JSON_RULES}
 ほかの料理の材料: ${day.dishes.filter((_, j) => j !== i).map(y => (y.ing || []).map(r => r.n + ' ' + r.q).join('、')).join(' / ')}
-JSONのみ: {"dish":{"role":"${x.role}","name":"…","min":15,"ing":[{"n":"…","q":"…","c":"…","left":"(残り物なら)"}],"steps":["…"],"kid":"…"},"flow":[{"t":"…","d":"主菜","min":5}],"nutri":{"kcal":680,"protein":28,"fat":20,"carb":95,"veg":140,"salt":2.4,"note":"…"}}`;
+JSONのみ: {"avoid":["要望で使えないとされた食材"],"dish":{"role":"${x.role}","name":"…","min":15,"ing":[{"n":"…","q":"…","c":"…","left":"(残り物なら)"}],"steps":["…"],"kid":"…"},"flow":[{"t":"…","d":"主菜","min":5}],"nutri":{"kcal":680,"protein":28,"fat":20,"carb":95,"veg":140,"salt":2.4,"note":"…"}}`;
       try {
-        const r = await S.sample.json(p, { modelTier: 'default' });
+        const r = await askAvoiding(p, r => [r?.dish]);
         const c = cleanDay(S.day, { dishes: [r.dish], flow: r.flow }, null);
         if (!c.dishes.length) throw { code: 'invalid_json' };
         const doc = JSON.parse(JSON.stringify(S.days[S.day]));
