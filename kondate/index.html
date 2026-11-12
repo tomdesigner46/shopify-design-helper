@@ -308,6 +308,23 @@ textarea.inp { min-height: 96px; resize: vertical; line-height: 1.6; }
 .plegend .pchip i { width: 10px; height: 10px; }
 .plegend b { font-family: var(--f-num); margin-left: 2px; }
 .similar { display: grid; gap: 4px; font-size: 12.5px; color: var(--warn); }
+.today { padding: 16px; display: grid; gap: 10px; }
+.today .eyebrow2 { font-size: 12px; font-weight: 700; color: var(--brand); letter-spacing: .08em; display: flex; justify-content: space-between; align-items: baseline; }
+.today h2 { font-size: 20px; line-height: 1.4; }
+.today .subs { font-size: 14px; color: var(--ink-soft); }
+.today .art svg { display: block; width: 100%; height: auto; }
+.ing-btn { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 1fr auto auto; gap: 10px; padding: 7px 0; font-size: 14.5px; align-items: baseline; width: 100%; cursor: pointer; border-bottom: 1px dashed var(--line); }
+.ing-btn:last-child { border-bottom: 0; }
+.ing-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ing-btn .q { font-family: var(--f-num); font-variant-numeric: tabular-nums; text-align: right; }
+.ing-btn .ed { color: var(--accent-text); font-size: 12px; text-align: right; white-space: nowrap; }
+.miss { font-size: 11px; font-weight: 700; color: var(--red); border: 1px solid var(--red); border-radius: 50px; padding: 0 7px; margin-left: 6px; white-space: nowrap; }
+.datepick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.datepick button { text-align: left; border: 1.5px solid var(--line-strong); background: var(--card); color: var(--ink); border-radius: 10px; padding: 8px 10px; cursor: pointer; display: grid; gap: 2px; min-width: 0; }
+.datepick button b { font-family: var(--f-num); font-size: 14px; color: var(--brand); }
+.datepick button span { font-size: 12px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.outs { display: flex; flex-wrap: wrap; gap: 6px; }
+.outs .ev { padding: 4px 4px 4px 12px; border-radius: 50px; }
 .tip-pop { position: fixed; z-index: 60; background: var(--house); color: var(--on-house); font-size: 12px; padding: 6px 10px; border-radius: 8px; pointer-events: none; box-shadow: var(--shadow-frap); white-space: nowrap; }
 .chip.lunch { background: var(--ceramic); color: var(--ink); }
 .chip.lunch b { color: var(--brand); font-weight: 700; margin-right: 3px; }
@@ -1021,6 +1038,28 @@ function viewMonth() {
   return h + `</div><p class="hint">日付をタップすると、その日の献立と作り方が開きます。オレンジの点は予定がある日です。</p>`;
 }
 
+/* ---------- 今日の献立 ---------- */
+function outList() { return (S.family.prefs?.out || []).filter(Boolean); }
+function isOut(name) { const n = String(name || ''); return outList().some(o => (AVOID_VAR[o] || [o]).some(v => v && n.includes(v))); }
+function todayCard() {
+  const day = S.days[TODAY], d = parseD(TODAY);
+  const head = `<div class="eyebrow2"><span>今日の夕ごはん　${d.getMonth() + 1}/${d.getDate()}（${dowOf(TODAY)}）</span><a href="#week-list" data-act="to-week" class="hint">1週間を見る ↓</a></div>`;
+  if (!day?.dishes?.length) return `<div class="card today">${head}<p class="hint">今日の献立はまだ決まっていません。</p>
+    <div class="row-btns"><button class="btn small" data-act="today-gen" ${S.sample ? '' : 'disabled'}>${ICON.spark}AIで今日の献立をつくる</button><button class="btn small ghost" data-act="outs-open">冷蔵庫にないもの</button></div></div>`;
+  const main = mainOf(day), subs = day.dishes.filter(x => x !== main);
+  const missing = day.dishes.flatMap(x => (x.ing || []).filter(i => isOut(i.n)).map(i => i.n));
+  return `<div class="card today">${head}
+    ${day.eatOut ? `<p class="st warn" style="margin:0">外食になりました（${esc(day.eatOut.genre)}）</p>` : ''}
+    <button class="art" data-act="open" data-date="${TODAY}" aria-label="今日の献立を開く" style="all:unset;cursor:pointer;display:block">${trayArt(day, { labels: true })}</button>
+    <h2 class="${day.eatOut ? 'struck' : ''}">${esc(main.name)}</h2>
+    ${subs.length ? `<p class="subs">${subs.map(x => esc(x.name)).join(' · ')}</p>` : ''}
+    <div class="chips">${flowMin(day) ? `<span class="chip min">約${flowMin(day)}分</span>` : ''}${lunchChips(TODAY)}</div>
+    ${missing.length ? `<p class="st warn" style="margin:0">△ 冷蔵庫にないもの: ${esc([...new Set(missing)].join('、'))}。材料をタップすると代わりにできます</p>` : ''}
+    ${lunchConflict(TODAY) ? `<p class="st warn" style="margin:0">△ ${esc(lunchConflict(TODAY).join('、'))}</p>` : ''}
+    <div class="row-btns"><button class="btn small" data-act="open" data-date="${TODAY}">作り方と材料を見る</button><button class="btn small ghost" data-act="swap-day" data-date="${TODAY}">別の日と入れ替える</button><button class="btn small ghost" data-act="outs-open">冷蔵庫にないもの</button></div>
+  </div>`;
+}
+
 function viewWeek() {
   const dates = weekDates();
   const anySample = dates.some(d => S.days[d]?.sample);
@@ -1029,8 +1068,8 @@ function viewWeek() {
   if (anySample) h += `<div class="banner"><p><b>サンプル献立です。</b>家族と予定を登録してから「AIで献立」を押すと、わが家向けに作り直せます。</p></div>`;
   if (!S.family.members.length && !anySample) h += `<div class="banner"><p><b>まず家族を登録しましょう。</b>子どもの年齢や好き嫌いを入れると、AIが取り分けや味付けまで考えます。</p><div><button class="btn small ghost" data-act="tab" data-tab="family">家族を登録する</button></div></div>`;
   if (none && S.loaded) h += `<div class="card empty"><h3>この週の献立はまだありません</h3><p>右下の「AIで献立」から7日分をまとめて作れます。前の日に余った食材を次の日の副菜で使い切るように組み立てます。</p><button class="btn" data-act="gen-open">${ICON.spark}7日分をつくる</button></div>`;
-  h += weekNutri(dates);
-  h += '<div class="days">';
+  if (dates.includes(TODAY)) h += todayCard();
+  h += '<div class="days" id="week-list">';
   dates.forEach((date, i) => {
     const day = S.days[date];
     const d = parseD(date);
@@ -1053,7 +1092,7 @@ function viewWeek() {
       h += `<div class="chain" aria-label="翌日以降への引き継ぎ"><span class="pills">${day.carry.map(c => `<span class="pill">${esc(c.n)} ${esc(c.q || '')} → ${esc(c.to || '')}</span>`).join('')}</span></div>`;
     } else if (i < 6) h += '<div class="gap"></div>';
   });
-  return h + '</div>';
+  return h + '</div>' + weekNutri(dates);
 }
 
 function viewSched() {
@@ -1214,7 +1253,7 @@ function dayAll(day, date) {
     h += `<div class="sec-title"><span>材料まとめ（${esc(day.servings || servingsLabel())}）</span></div><div class="card">`;
     CATS.forEach(cat => {
       const rs = rows.filter(r => (CATS.includes(r.c) ? r.c : 'その他') === cat); if (!rs.length) return;
-      h += `<div class="ing-group"><h4>${cat}</h4>${sumIng(rs).map(r => `<div class="ing"><span>${esc(r.name)}${r.left ? `<span class="left">残り物</span>` : ''}</span><span class="q">${esc(r.qty)}</span></div>`).join('')}</div>`;
+      h += `<div class="ing-group"><h4>${cat}</h4>${sumIng(rs).map(r => `<div class="ing"><span>${esc(r.name)}${isOut(r.name) ? '<span class="miss">ない</span>' : r.left ? `<span class="left">残り物</span>` : ''}</span><span class="q">${esc(r.qty)}</span></div>`).join('')}</div>`;
     });
     h += '</div>';
   }
@@ -1228,7 +1267,7 @@ function dayAll(day, date) {
   }
   h += (day.eatOut ? '' : groupsCard(day)) + nutriCard(day);
   if (day.tip) h += `<div class="card tip"><span style="color:var(--gold)">${ICON.spark.replace('<svg', '<svg width="18" height="18"')}</span><span>${esc(day.tip)}</span></div>`;
-  h += `<div class="row-btns"><button class="btn ghost small" data-act="dish-edit" data-i="-1">＋ 料理を追加</button><button class="btn ghost small" data-act="regen-day" ${S.sample ? '' : 'disabled'}>${ICON.spark}この日をAIで作り直す</button><button class="btn danger small" data-act="del-day">この日を空にする</button></div>`;
+  h += `<div class="row-btns"><button class="btn ghost small" data-act="dish-edit" data-i="-1">＋ 料理を追加</button><button class="btn ghost small" data-act="regen-day" ${S.sample ? '' : 'disabled'}>${ICON.spark}この日をAIで作り直す</button><button class="btn ghost small" data-act="swap-day" data-date="${date}">別の日と入れ替える</button><button class="btn ghost small" data-act="outs-open">冷蔵庫にないもの</button><button class="btn danger small" data-act="del-day">この日を空にする</button></div>`;
   h += updatedLine(day);
   return h;
 }
@@ -1240,7 +1279,7 @@ function dayDish(day, date) {
   let h = `<div class="dish-pills" role="tablist">${dishes.map((y, j) => `<button role="tab" data-act="dish-pick" data-i="${j}" aria-selected="${j === i}">${esc(y.role)}・${esc(y.name)}</button>`).join('')}</div>`;
   h += `<div class="card"><div class="dish-head"><span class="role">${esc(x.role)}</span><h3>${esc(x.name)}</h3>
     <div class="chips">${x.min ? `<span class="chip min">約${x.min}分</span>` : ''}<span class="chip min">${esc(day.servings || servingsLabel())}</span>${(x.ing || []).some(r => r.left) ? '<span class="chip gold">残り物をつかう</span>' : ''}</div></div>
-    <p class="sub-h">材料</p><div class="ing-group" style="padding-top:4px">${(x.ing || []).map(r => `<div class="ing"><span>${esc(r.n)}${r.left ? `<span class="left">残り物</span>` : ''}</span><span class="q">${esc(qShort(r.q))}</span></div>`).join('') || '<p class="hint">材料が入っていません</p>'}</div>
+    <p class="sub-h">材料　<span style="font-weight:500">ない材料はタップで変更できます</span></p><div class="ing-group" style="padding-top:4px">${(x.ing || []).map((r, k) => `<button type="button" class="ing-btn" data-act="ing-miss" data-i="${i}" data-k="${k}" aria-label="${esc(r.n)}を変更"><span>${esc(r.n)}${isOut(r.n) ? '<span class="miss">ない</span>' : r.left ? `<span class="left">残り物</span>` : ''}</span><span class="q">${esc(qShort(r.q))}</span><span class="ed" aria-hidden="true">変更</span></button>`).join('') || '<p class="hint">材料が入っていません</p>'}</div>
     <p class="sub-h">作り方</p><ol class="plain steps">${(x.steps || []).map(s => `<li><span>${esc(s)}</span></li>`).join('') || '<li><span class="hint">手順が入っていません</span></li>'}</ol>
     ${x.kid ? `<div class="kid" style="border-top:1px solid var(--line)"><span class="who">子どもの分</span><p>${esc(x.kid)}</p></div>` : ''}
   </div>
@@ -1365,7 +1404,7 @@ function familyText() {
   const ms = S.family.members, p = S.family.prefs || {};
   const lines = ms.length ? ms.map(m => `- ${m.kind === '子ども' ? '子ども' : '大人'} ${m.name}${m.age ? '（' + m.age + '歳）' : ''}${m.likes ? ' 好き:' + m.likes : ''}${m.dislikes ? ' 苦手:' + m.dislikes : ''}${m.allergy ? ' アレルギー:' + m.allergy + '（絶対に使わない）' : ''}${m.note ? ' メモ:' + m.note : ''}`).join('\n') : '- 未登録（4人分の一般的な家庭として考える）';
   const kidT = ms.filter(m => m.kind === '子ども').map(m => { const T = personT(m); return `${m.name}${m.age ? '(' + m.age + '歳)' : ''}: 大人の約${T.portion}人前、エネルギー${T.kcal}kcal・たんぱく質${T.protein}g以上・野菜${T.veg}g以上・塩分${T.salt}g以下`; });
-  return `【家族】${servingsLabel()}\n${lines}\n${kidT.length ? '【子どもの夕食1食の目安】' + kidT.join(' / ') + '。子どもの塩分目安を超えないよう、味を濃くする前に取り分ける・汁物は具を多めに汁を少なめにする等の工夫を入れる\n' : ''}【方針】平日の調理時間:${p.time || '30分'} / 大事にしたいこと:${(p.focus || ['節約']).join('・')}${p.notes ? '\nメモ:' + p.notes : ''}`;
+  return `【家族】${servingsLabel()}\n${lines}\n${kidT.length ? '【子どもの夕食1食の目安】' + kidT.join(' / ') + '。子どもの塩分目安を超えないよう、味を濃くする前に取り分ける・汁物は具を多めに汁を少なめにする等の工夫を入れる\n' : ''}${outList().length ? '【今、家にない食材（使わない）】' + outList().join('、') + '\n' : ''}【方針】平日の調理時間:${p.time || '30分'} / 大事にしたいこと:${(p.focus || ['節約']).join('・')}${p.notes ? '\nメモ:' + p.notes : ''}`;
 }
 function eventsText(dates) {
   const ls = dates.map(d => { const it = evItems(d); return it.length ? `- ${d}(${dowOf(d)}): ${it.map(e => (memberName(e.who) || '家族') + '「' + e.kind + (e.memo ? '・' + e.memo : '') + '」').join('、')}` : null; }).filter(Boolean);
@@ -1595,7 +1634,7 @@ function avoidHits(dishes, avoid) {
 // AIに聞き、使えない食材が入っていたら1回だけ聞き直す
 async function askAvoiding(prompt, pick) {
   let r = await S.sample.json(prompt, { modelTier: 'default' });
-  const avoid = [...new Set((Array.isArray(r?.avoid) ? r.avoid : []).map(x => String(x).trim()).filter(Boolean))];
+  const avoid = [...new Set([...(Array.isArray(r?.avoid) ? r.avoid : []), ...outList()].map(x => String(x).trim()).filter(Boolean))];
   let bad = avoidHits(pick(r), avoid);
   if (bad.length) {
     r = await S.sample.json(prompt + `\n\n【やり直し】前回の答えに使えない食材（${bad.join('、')}）が入っていました。${avoid.join('、')}を材料にも料理名にも一切使わない料理に変えて、もう一度JSONで答えてください。`, { modelTier: 'default' });
@@ -1906,6 +1945,80 @@ async function applyEatOutPlan(i) {
   toast(ok === pt.changes.length ? `${ok}日分の献立を「${pt.title}」に変えました` : `${ok}/${pt.changes.length}日分だけ変えられました。残りは各日の「AIで作り直す」からお試しください`);
 }
 
+/* ---------- 献立を手軽に変える ---------- */
+function sheetSwapDay(date) {
+  const cands = [...Array(15)].map((_, i) => addDays(date, i - 7)).filter(d => d !== date);
+  openSheet(`<h3>${md(date)}（${dowOf(date)}）と入れ替える日</h3>
+  <p class="hint">選んだ日と献立がまるごと入れ替わります。空いている日を選ぶと移動になります。</p>
+  <div class="datepick">${cands.map(d => { const m = mainOf(S.days[d]); return `<button type="button" data-act="swap-day-ok" data-a="${date}" data-b="${d}"><b>${md(d)}（${dowOf(d)}）${d === TODAY ? ' 今日' : ''}</b><span>${m ? esc(m.name) : '空き'}</span></button>`; }).join('')}</div>
+  <button class="btn ghost block" data-act="sheet-close">やめる</button>`);
+}
+async function swapDays(a, b) {
+  const A = S.days[a], B = S.days[b];
+  const move = (src, to) => { if (!src?.dishes?.length) return null; const d = JSON.parse(JSON.stringify(src)); delete d.eatOut; delete d.uses; delete d.carry; delete d.sample; (d.dishes || []).forEach(x => (x.ing || []).forEach(i => delete i.left)); return d; };
+  const na = move(B, a), nb = move(A, b);
+  if (A?.eatOut && na) na.eatOut = A.eatOut; if (B?.eatOut && nb) nb.eatOut = B.eatOut;
+  closeSheet();
+  if (na) await saveDay(a, na); else deleteDay(a);
+  if (nb) await saveDay(b, nb); else deleteDay(b);
+  if (S.day === a) S.dish = 0;
+  toast(`${md(a)}（${dowOf(a)}）と${md(b)}（${dowOf(b)}）の献立を入れ替えました`);
+}
+function sheetIngMiss(i, k) {
+  const date = S.day, x = S.days[date]?.dishes?.[i], ing = x?.ing?.[k]; if (!ing) return;
+  openSheet(`<h3>「${esc(ing.n)}」を変える</h3>
+  <p class="hint">${esc(x.name)}の材料です。</p>
+  <form id="im-form" style="display:grid;gap:12px">
+    <label class="f">代わりに使いたいもの（任意）<input class="inp" id="im-sub" name="sub" placeholder="例：ピーマン／冷蔵庫にあるもので"></label>
+    <div class="opt"><input type="checkbox" name="remember" id="im-rem" value="1" checked><label for="im-rem">冷蔵庫にないものとして覚えておく</label></div>
+    <p class="hint">覚えておくと、ほかの日の献立をAIで作るときにも使いません。買い物リストでチェックすると自動で外れます。</p>
+    <button class="btn block" type="submit" ${S.sample ? '' : 'disabled'}>${ICON.spark}AIで代わりの材料に変える</button>
+    <button class="btn ghost block" type="button" data-act="ing-drop" data-i="${i}" data-k="${k}">この材料を外すだけ</button>
+  </form>`, el => el.querySelector('form').addEventListener('submit', e => {
+    e.preventDefault(); const f = new FormData(e.target);
+    if (f.get('remember')) addOut(ing.n);
+    closeSheet(); replaceIng(date, i, k, String(f.get('sub') || '').trim());
+  }));
+}
+async function replaceIng(date, i, k, sub) {
+  const day = S.days[date], x = day?.dishes?.[i], ing = x?.ing?.[k]; if (!ing) return;
+  toast(`「${ing.n}」の代わりを考えています…`);
+  const name = String(ing.n).replace(/（.*?）|\(.*?\)/g, '');
+  const p = `${reqBlock(`${name}が家にない。${sub ? '代わりに' + sub + 'を使いたい。' : ''}`)}
+日本の家庭の夕食の料理「${x.name}」（${x.role}）で、材料の「${ing.n} ${ing.q}」が使えません。${sub ? `代わりに「${sub}」を使ってください。` : '家にありそうな身近な食材で代えるか、なくても作れるようにしてください。'}
+できるだけ元の料理に近いまま、材料と作り方だけを最小限に直す。料理名に${name}が入っていれば名前も変える。
+${familyText()}
+元の料理: ${JSON.stringify({ name: x.name, ing: x.ing, steps: x.steps, kid: x.kid })}
+${JSON_RULES}
+JSONのみ: {"avoid":["${name}"],"dish":{"role":"${x.role}","name":"…","min":${Number(x.min) || 15},"ing":[{"n":"…","q":"…","c":"…"}],"steps":["…"],"kid":"…"}}`;
+  try {
+    const r = await askAvoiding(p, r => [r?.dish]);
+    const c = cleanDay(date, { dishes: [r.dish] }, null); if (!c.dishes.length) throw { code: 'invalid_json' };
+    const doc = JSON.parse(JSON.stringify(S.days[date])); doc.dishes[i] = c.dishes[0]; delete doc.nutri;
+    await saveDay(date, doc); toast(`「${c.dishes[0].name}」に直しました`);
+  } catch (e) { toast(aiError(e)); }
+}
+function addOut(n) {
+  const name = String(n || '').replace(/（.*?）|\(.*?\)/g, '').trim(); if (!name) return;
+  const prefs = S.family.prefs = S.family.prefs || {};
+  prefs.out = [...new Set([...(prefs.out || []), name])]; saveFamily();
+}
+function removeOut(n) { const prefs = S.family.prefs || {}; prefs.out = (prefs.out || []).filter(x => x !== n); S.family.prefs = prefs; saveFamily(); }
+function sheetOuts() {
+  const outs = outList();
+  openSheet(`<h3>冷蔵庫にないもの</h3>
+  <p class="hint">ここに入れた食材は、AIで献立を作る・作り直す・差し替えるときに使いません。献立に入っている場合は材料に「ない」と出ます。買い物リストでチェックすると自動で外れます。</p>
+  <div class="outs">${outs.map(o => `<span class="ev"><span class="txt">${esc(o)}</span><button class="x" data-act="out-del" data-n="${esc(o)}" aria-label="${esc(o)}を外す">×</button></span>`).join('') || '<span class="hint">まだありません</span>'}</div>
+  <form id="out-form" style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end">
+    <label class="f">食材を追加<input class="inp" id="out-add" name="n" placeholder="例：にんじん"></label>
+    <button class="btn" type="submit">追加</button>
+  </form>
+  <button class="btn ghost block" data-act="sheet-close">閉じる</button>`, el => el.querySelector('form').addEventListener('submit', e => {
+    e.preventDefault(); const v = String(new FormData(e.target).get('n') || '').trim(); if (!v) return;
+    v.split(/[、,，\s]+/).filter(Boolean).forEach(addOut); sheetOuts();
+  }));
+}
+
 /* ---------- events ---------- */
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-act]'); if (!t) return;
@@ -1945,6 +2058,14 @@ document.addEventListener('click', e => {
     case 'mem-edit': sheetMember(t.dataset.id); break;
     case 'mem-del': S.family.members = S.family.members.filter(m => m.id !== t.dataset.id); saveFamily(); closeSheet(); break;
     case 'copy-shop': copyShop(); break;
+    case 'to-week': e.preventDefault(); document.getElementById('week-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
+    case 'today-gen': S.day = TODAY; regenDay(''); S.day = null; break;
+    case 'swap-day': sheetSwapDay(t.dataset.date); break;
+    case 'swap-day-ok': swapDays(t.dataset.a, t.dataset.b); break;
+    case 'ing-miss': sheetIngMiss(+t.dataset.i, +t.dataset.k); break;
+    case 'ing-drop': { const doc = JSON.parse(JSON.stringify(S.days[S.day])); const x = doc.dishes[+t.dataset.i]; const n = x.ing[+t.dataset.k]?.n; x.ing.splice(+t.dataset.k, 1); delete doc.nutri; if (document.getElementById('im-rem')?.checked && n) addOut(n); closeSheet(); saveDay(S.day, doc); toast(`「${n}」を外しました`); break; }
+    case 'outs-open': sheetOuts(); break;
+    case 'out-del': removeOut(t.dataset.n); sheetOuts(); break;
     case 'lunch-fix': fixLunchConflicts(); break;
     case 'nutri-calc': calcNutri([S.day]); break;
     case 'nut-who': S.nutWho = t.dataset.id; try { localStorage.setItem('kondate.nutWho', S.nutWho); } catch (err) {} render(); break;
@@ -1963,6 +2084,7 @@ document.addEventListener('change', e => {
   const t = e.target; if (t.dataset?.act !== 'check') return;
   const c = { ...(S.checks[S.week] || {}) }; if (t.checked) c[t.dataset.name] = true; else delete c[t.dataset.name];
   S.checks[S.week] = c; saveChecks();
+  if (t.checked && outList().some(o => t.dataset.name.includes(o))) { outList().filter(o => t.dataset.name.includes(o)).forEach(removeOut); toast(`「${t.dataset.name}」を冷蔵庫にないものから外しました`); }
 });
 document.addEventListener('submit', e => {
   if (e.target.id !== 'prefs') return;
