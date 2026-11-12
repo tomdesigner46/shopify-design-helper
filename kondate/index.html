@@ -133,7 +133,7 @@ main > .wrap { display: grid; gap: 12px; }
 
 /* Bottom nav */
 .nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; background: var(--card); box-shadow: 0 -1px 0 var(--line), 0 -4px 12px rgba(0,0,0,.05); padding-bottom: env(safe-area-inset-bottom, 0px); }
-.nav .wrap { display: grid; grid-template-columns: repeat(4, 1fr); padding-block: 4px; }
+.nav .wrap { display: grid; grid-template-columns: repeat(5, 1fr); padding-block: 4px; }
 .nav button { border: 0; background: none; display: grid; justify-items: center; gap: 2px; padding: 8px 0; font-size: 11px; color: var(--ink-soft); cursor: pointer; font-weight: 500; }
 .nav button svg { width: 22px; height: 22px; }
 .nav button[aria-current="page"] { color: var(--accent-text); font-weight: 700; }
@@ -325,6 +325,19 @@ textarea.inp { min-height: 96px; resize: vertical; line-height: 1.6; }
 .datepick button span { font-size: 12px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .outs { display: flex; flex-wrap: wrap; gap: 6px; }
 .outs .ev { padding: 4px 4px 4px 12px; border-radius: 50px; }
+.have { font-size: 11px; font-weight: 700; color: var(--accent-text); border: 1px solid var(--accent-text); border-radius: 50px; padding: 0 7px; margin-left: 6px; white-space: nowrap; }
+.fr-row { display: grid; grid-template-columns: 1fr auto auto 32px; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.fr-row:last-child { border-bottom: 0; }
+.fr-row .nm { all: unset; cursor: pointer; font-size: 15px; min-width: 0; }
+.fr-row .nm small { display: block; font-size: 11.5px; color: var(--ink-soft); }
+.fr-row .q { font-family: var(--f-num); font-size: 14px; text-align: right; white-space: nowrap; }
+.soon { border: 1.5px solid var(--line-strong); background: var(--card); color: var(--ink-soft); border-radius: 50px; padding: 3px 10px; font-size: 12px; cursor: pointer; white-space: nowrap; }
+.soon[aria-pressed="true"] { background: var(--warn); border-color: var(--warn); color: #fff; font-weight: 700; }
+.addrow { display: grid; grid-template-columns: 1fr 88px; gap: 8px; }
+.prow { display: grid; grid-template-columns: 26px 1fr 84px; gap: 8px; align-items: center; }
+.prow input[type=checkbox] { width: 22px; height: 22px; accent-color: var(--accent); }
+.prow .inp { min-height: 40px; padding: 8px 10px; font-size: 15px; }
+.prow.low .inp:nth-child(2) { border-color: var(--warn); border-width: 1.5px; }
 .tip-pop { position: fixed; z-index: 60; background: var(--house); color: var(--on-house); font-size: 12px; padding: 6px 10px; border-radius: 8px; pointer-events: none; box-shadow: var(--shadow-frap); white-space: nowrap; }
 .chip.lunch { background: var(--ceramic); color: var(--ink); }
 .chip.lunch b { color: var(--brand); font-weight: 700; margin-right: 3px; }
@@ -391,6 +404,7 @@ const ICON = {
   week: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11h16M6 11a6 6 0 0 0 12 0"/><path d="M9 7c0-1.5 1-2 1-3M13 7c0-1.5 1-2 1-3"/><path d="M5 19h14"/></svg>',
   sched: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
   shop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.2 11.2a1.5 1.5 0 0 1-1.5 1.3H7.7a1.5 1.5 0 0 1-1.5-1.3z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg>',
+  fridge: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2.5" width="14" height="19" rx="2.5"/><path d="M5 9.5h14M8.5 5.5v2M8.5 12.5v3"/></svg>',
   family: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="7" r="3"/><circle cx="17" cy="9.5" r="2.3"/><path d="M2.5 20c0-3.3 2.5-6 5.5-6s5.5 2.7 5.5 6M14 20c0-2.4 1.3-4.6 3-4.6s3 2.2 3 4.6"/></svg>',
   left: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
   right: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
@@ -417,7 +431,7 @@ const uid = () => Math.random().toString(36).slice(2, 9);
 
 const S = {
   week: mondayOf(new Date()),
-  days: {}, events: {}, recurring: {}, kidmenus: {}, family: { members: [], prefs: {} }, checks: {},
+  days: {}, events: {}, recurring: {}, fridge: [], kidmenus: {}, family: { members: [], prefs: {} }, checks: {},
   tab: 'week', view: 'week', month: TODAY.slice(0, 7), day: null, dayTab: 'all', dish: 0,
   gen: null, db: null, sample: null, me: null, user: null, names: {},
   loaded: false,
@@ -461,6 +475,7 @@ async function boot() {
   on('days', snap => { S.days = {}; snap.docs.forEach(d => { const v = d.data(); if (v) S.days[d.id] = v; }); });
   on('events', snap => { S.events = {}; snap.docs.forEach(d => { const v = d.data(); if (v) S.events[d.id] = v; }); });
   on('recurring', snap => { S.recurring = {}; snap.docs.forEach(d => { const v = d.data(); if (v) S.recurring[d.id] = { ...v, id: d.id }; }); });
+  db.doc('fridge/main').onSnapshot(snap => { S.fridge = (snap.exists ? snap.data()?.items : null) || []; render(); }, () => {});
   on('kidmenus', snap => { S.kidmenus = {}; snap.docs.forEach(d => { const v = d.data(); if (v) S.kidmenus[d.id] = v; }); });
   on('shopping', snap => { S.checks = {}; snap.docs.forEach(d => { const v = d.data(); if (v) S.checks[d.id] = v.checked || {}; }); });
   db.doc('family/main').onSnapshot(snap => { const v = snap.exists ? snap.data() : null; S.family = { members: v?.members || [], prefs: v?.prefs || {} }; render(); }, () => {});
@@ -550,10 +565,10 @@ function render() { renderTop(); renderNav(); renderView(); renderOverlay(); doc
 
 function renderTop() {
   const dates = weekDates();
-  const titles = { week: S.view === 'month' ? 'ひと月の夕ごはん' : '今週の夕ごはん', sched: '家族の予定', shop: '買い物リスト', family: '家族のプロフィール' };
+  const titles = { week: S.view === 'month' ? 'ひと月の夕ごはん' : '今週の夕ごはん', sched: '家族の予定', shop: '買い物リスト', fridge: '冷蔵庫の中身', family: '家族のプロフィール' };
   const thisWeek = S.week === mondayOf(new Date());
   const rel = thisWeek ? '今週' : (S.week > mondayOf(new Date()) ? (S.week === addDays(mondayOf(new Date()), 7) ? '来週' : '') : '');
-  const showWeek = S.tab !== 'family';
+  const showWeek = S.tab !== 'family' && S.tab !== 'fridge';
   document.getElementById('top').innerHTML = `<div class="wrap">
     <span class="eyebrow">${titles[S.tab]}</span>
     ${S.tab === 'week' && S.view === 'month' ? (() => { const [y, m] = S.month.split('-').map(Number); return `<div class="top-row">
@@ -564,18 +579,18 @@ function renderTop() {
       <button class="icon-btn" data-act="wk" data-n="-7" aria-label="前の週">${ICON.left}</button>
       <div class="week-label">${md(dates[0])} – ${md(dates[6])}${rel ? `<small>${rel}</small>` : ''}</div>
       <button class="icon-btn" data-act="wk" data-n="7" aria-label="次の週">${ICON.right}</button>
-    </div>` : `<div class="top-row"><div class="week-label">${S.family.members.length ? S.family.members.length + '人家族' : 'わが家'}</div></div>`}
+    </div>` : `<div class="top-row"><div class="week-label">${S.tab === 'fridge' ? `${S.fridge.length}品<small>${S.fridgeAt ? '' : ''}</small>` : S.family.members.length ? S.family.members.length + '人家族' : 'わが家'}</div></div>`}
   </div>`;
 }
 
 function renderNav() {
-  const tabs = [['week', '献立'], ['sched', '予定'], ['shop', '買い物'], ['family', '家族']];
+  const tabs = [['week', '献立'], ['sched', '予定'], ['fridge', '冷蔵庫'], ['shop', '買い物'], ['family', '家族']];
   document.getElementById('nav').innerHTML = tabs.map(([k, l]) => `<button data-act="tab" data-tab="${k}" ${S.tab === k ? 'aria-current="page"' : ''}>${ICON[k]}${l}</button>`).join('');
 }
 
 function renderView() {
   const v = document.getElementById('view');
-  v.innerHTML = ({ week: () => S.view === 'month' ? viewMonth() : viewWeek(), sched: viewSched, shop: viewShop, family: viewFamily })[S.tab]();
+  v.innerHTML = ({ week: () => S.view === 'month' ? viewMonth() : viewWeek(), sched: viewSched, fridge: viewFridge, shop: viewShop, family: viewFamily })[S.tab]();
 }
 
 /* ---------- 献立のイメージ図 ---------- */
@@ -1040,23 +1055,31 @@ function viewMonth() {
 
 /* ---------- 今日の献立 ---------- */
 function outList() { return (S.family.prefs?.out || []).filter(Boolean); }
-function isOut(name) { const n = String(name || ''); return outList().some(o => (AVOID_VAR[o] || [o]).some(v => v && n.includes(v))); }
+function isOut() { return false; }
+// 材料名と冷蔵庫の食材名をゆるく照らし合わせる（「鶏もも肉」と「鶏もも」、「にんじん」と「人参」など）
+const coreName = n => String(n || '').replace(/（.*?）|\(.*?\)/g, '').replace(/\s/g, '').trim();
+function sameFood(a, b) {
+  const x = coreName(a), y = coreName(b); if (!x || !y) return false;
+  if (x === y || (y.length >= 2 && x.includes(y)) || (x.length >= 2 && y.includes(x))) return true;
+  return Object.values(AVOID_VAR).some(vs => vs.some(v => x.includes(v)) && vs.some(v => y.includes(v)));
+}
+function inFridge(name) { return S.fridge.find(f => sameFood(name, f.n)) || null; }
 function todayCard() {
   const day = S.days[TODAY], d = parseD(TODAY);
   const head = `<div class="eyebrow2"><span>今日の夕ごはん　${d.getMonth() + 1}/${d.getDate()}（${dowOf(TODAY)}）</span><a href="#week-list" data-act="to-week" class="hint">1週間を見る ↓</a></div>`;
   if (!day?.dishes?.length) return `<div class="card today">${head}<p class="hint">今日の献立はまだ決まっていません。</p>
-    <div class="row-btns"><button class="btn small" data-act="today-gen" ${S.sample ? '' : 'disabled'}>${ICON.spark}AIで今日の献立をつくる</button><button class="btn small ghost" data-act="outs-open">冷蔵庫にないもの</button></div></div>`;
+    <div class="row-btns"><button class="btn small" data-act="today-gen" ${S.sample ? '' : 'disabled'}>${ICON.spark}AIで今日の献立をつくる</button><button class="btn small ghost" data-act="fridge-cook">冷蔵庫のもので作る</button></div></div>`;
   const main = mainOf(day), subs = day.dishes.filter(x => x !== main);
-  const missing = day.dishes.flatMap(x => (x.ing || []).filter(i => isOut(i.n)).map(i => i.n));
+  const have = [...new Set(day.dishes.flatMap(x => (x.ing || []).filter(i => i.c !== '調味料' && inFridge(i.n)).map(i => coreName(i.n))))];
   return `<div class="card today">${head}
     ${day.eatOut ? `<p class="st warn" style="margin:0">外食になりました（${esc(day.eatOut.genre)}）</p>` : ''}
     <button class="art" data-act="open" data-date="${TODAY}" aria-label="今日の献立を開く" style="all:unset;cursor:pointer;display:block">${trayArt(day, { labels: true })}</button>
     <h2 class="${day.eatOut ? 'struck' : ''}">${esc(main.name)}</h2>
     ${subs.length ? `<p class="subs">${subs.map(x => esc(x.name)).join(' · ')}</p>` : ''}
     <div class="chips">${flowMin(day) ? `<span class="chip min">約${flowMin(day)}分</span>` : ''}${lunchChips(TODAY)}</div>
-    ${missing.length ? `<p class="st warn" style="margin:0">△ 冷蔵庫にないもの: ${esc([...new Set(missing)].join('、'))}。材料をタップすると代わりにできます</p>` : ''}
+    ${S.fridge.length ? `<p class="hint" style="margin:0">冷蔵庫にあるもの: ${have.length ? esc(have.join('、')) : 'この献立では使っていません'}</p>` : ''}
     ${lunchConflict(TODAY) ? `<p class="st warn" style="margin:0">△ ${esc(lunchConflict(TODAY).join('、'))}</p>` : ''}
-    <div class="row-btns"><button class="btn small" data-act="open" data-date="${TODAY}">作り方と材料を見る</button><button class="btn small ghost" data-act="swap-day" data-date="${TODAY}">別の日と入れ替える</button><button class="btn small ghost" data-act="outs-open">冷蔵庫にないもの</button></div>
+    <div class="row-btns"><button class="btn small" data-act="open" data-date="${TODAY}">作り方と材料を見る</button><button class="btn small ghost" data-act="swap-day" data-date="${TODAY}">別の日と入れ替える</button><button class="btn small ghost" data-act="cooked" data-date="${TODAY}">作った</button></div>
   </div>`;
 }
 
@@ -1129,7 +1152,7 @@ function viewShop() {
     const items = list.filter(i => i.cat === cat); if (!items.length) return;
     h += `<div class="shop-group"><h4>${cat === '調味料' ? '調味料（家にあるか確認）' : cat}</h4>${items.map(i => `
       <label class="shop-item${checks[i.name] ? ' done' : ''}"><input type="checkbox" data-act="check" data-name="${esc(i.name)}" ${checks[i.name] ? 'checked' : ''}>
-      <span class="n">${esc(i.name)}<span class="when">${[...i.days].join('・')}で使う</span></span><span class="q">${esc(i.qty)}</span></label>`).join('')}</div>`;
+      <span class="n">${esc(i.name)}${i.cat !== '調味料' && inFridge(i.name) ? '<span class="have">家にある</span>' : ''}<span class="when">${[...i.days].join('・')}で使う${i.cat !== '調味料' && inFridge(i.name) ? `（冷蔵庫: ${esc(inFridge(i.name).q || 'あり')}）` : ''}</span></span><span class="q">${esc(i.qty)}</span></label>`).join('')}</div>`;
   });
   return h + '</div>';
 }
@@ -1253,7 +1276,7 @@ function dayAll(day, date) {
     h += `<div class="sec-title"><span>材料まとめ（${esc(day.servings || servingsLabel())}）</span></div><div class="card">`;
     CATS.forEach(cat => {
       const rs = rows.filter(r => (CATS.includes(r.c) ? r.c : 'その他') === cat); if (!rs.length) return;
-      h += `<div class="ing-group"><h4>${cat}</h4>${sumIng(rs).map(r => `<div class="ing"><span>${esc(r.name)}${isOut(r.name) ? '<span class="miss">ない</span>' : r.left ? `<span class="left">残り物</span>` : ''}</span><span class="q">${esc(r.qty)}</span></div>`).join('')}</div>`;
+      h += `<div class="ing-group"><h4>${cat}</h4>${sumIng(rs).map(r => `<div class="ing"><span>${esc(r.name)}${inFridge(r.name) && r.cat !== '調味料' ? '<span class="have">冷蔵庫</span>' : r.left ? `<span class="left">残り物</span>` : ''}</span><span class="q">${esc(r.qty)}</span></div>`).join('')}</div>`;
     });
     h += '</div>';
   }
@@ -1267,7 +1290,7 @@ function dayAll(day, date) {
   }
   h += (day.eatOut ? '' : groupsCard(day)) + nutriCard(day);
   if (day.tip) h += `<div class="card tip"><span style="color:var(--gold)">${ICON.spark.replace('<svg', '<svg width="18" height="18"')}</span><span>${esc(day.tip)}</span></div>`;
-  h += `<div class="row-btns"><button class="btn ghost small" data-act="dish-edit" data-i="-1">＋ 料理を追加</button><button class="btn ghost small" data-act="regen-day" ${S.sample ? '' : 'disabled'}>${ICON.spark}この日をAIで作り直す</button><button class="btn ghost small" data-act="swap-day" data-date="${date}">別の日と入れ替える</button><button class="btn ghost small" data-act="outs-open">冷蔵庫にないもの</button><button class="btn danger small" data-act="del-day">この日を空にする</button></div>`;
+  h += `<div class="row-btns"><button class="btn ghost small" data-act="dish-edit" data-i="-1">＋ 料理を追加</button><button class="btn ghost small" data-act="regen-day" ${S.sample ? '' : 'disabled'}>${ICON.spark}この日をAIで作り直す</button><button class="btn ghost small" data-act="swap-day" data-date="${date}">別の日と入れ替える</button><button class="btn ghost small" data-act="cooked" data-date="${date}">作った（冷蔵庫から外す）</button><button class="btn danger small" data-act="del-day">この日を空にする</button></div>`;
   h += updatedLine(day);
   return h;
 }
@@ -1279,7 +1302,7 @@ function dayDish(day, date) {
   let h = `<div class="dish-pills" role="tablist">${dishes.map((y, j) => `<button role="tab" data-act="dish-pick" data-i="${j}" aria-selected="${j === i}">${esc(y.role)}・${esc(y.name)}</button>`).join('')}</div>`;
   h += `<div class="card"><div class="dish-head"><span class="role">${esc(x.role)}</span><h3>${esc(x.name)}</h3>
     <div class="chips">${x.min ? `<span class="chip min">約${x.min}分</span>` : ''}<span class="chip min">${esc(day.servings || servingsLabel())}</span>${(x.ing || []).some(r => r.left) ? '<span class="chip gold">残り物をつかう</span>' : ''}</div></div>
-    <p class="sub-h">材料　<span style="font-weight:500">ない材料はタップで変更できます</span></p><div class="ing-group" style="padding-top:4px">${(x.ing || []).map((r, k) => `<button type="button" class="ing-btn" data-act="ing-miss" data-i="${i}" data-k="${k}" aria-label="${esc(r.n)}を変更"><span>${esc(r.n)}${isOut(r.n) ? '<span class="miss">ない</span>' : r.left ? `<span class="left">残り物</span>` : ''}</span><span class="q">${esc(qShort(r.q))}</span><span class="ed" aria-hidden="true">変更</span></button>`).join('') || '<p class="hint">材料が入っていません</p>'}</div>
+    <p class="sub-h">材料　<span style="font-weight:500">材料をタップすると、ないときに変更できます</span></p><div class="ing-group" style="padding-top:4px">${(x.ing || []).map((r, k) => `<button type="button" class="ing-btn" data-act="ing-miss" data-i="${i}" data-k="${k}" aria-label="${esc(r.n)}を変更"><span>${esc(r.n)}${inFridge(r.n) && r.c !== '調味料' ? '<span class="have">冷蔵庫</span>' : r.left ? `<span class="left">残り物</span>` : ''}</span><span class="q">${esc(qShort(r.q))}</span><span class="ed" aria-hidden="true">変更</span></button>`).join('') || '<p class="hint">材料が入っていません</p>'}</div>
     <p class="sub-h">作り方</p><ol class="plain steps">${(x.steps || []).map(s => `<li><span>${esc(s)}</span></li>`).join('') || '<li><span class="hint">手順が入っていません</span></li>'}</ol>
     ${x.kid ? `<div class="kid" style="border-top:1px solid var(--line)"><span class="who">子どもの分</span><p>${esc(x.kid)}</p></div>` : ''}
   </div>
@@ -1404,7 +1427,7 @@ function familyText() {
   const ms = S.family.members, p = S.family.prefs || {};
   const lines = ms.length ? ms.map(m => `- ${m.kind === '子ども' ? '子ども' : '大人'} ${m.name}${m.age ? '（' + m.age + '歳）' : ''}${m.likes ? ' 好き:' + m.likes : ''}${m.dislikes ? ' 苦手:' + m.dislikes : ''}${m.allergy ? ' アレルギー:' + m.allergy + '（絶対に使わない）' : ''}${m.note ? ' メモ:' + m.note : ''}`).join('\n') : '- 未登録（4人分の一般的な家庭として考える）';
   const kidT = ms.filter(m => m.kind === '子ども').map(m => { const T = personT(m); return `${m.name}${m.age ? '(' + m.age + '歳)' : ''}: 大人の約${T.portion}人前、エネルギー${T.kcal}kcal・たんぱく質${T.protein}g以上・野菜${T.veg}g以上・塩分${T.salt}g以下`; });
-  return `【家族】${servingsLabel()}\n${lines}\n${kidT.length ? '【子どもの夕食1食の目安】' + kidT.join(' / ') + '。子どもの塩分目安を超えないよう、味を濃くする前に取り分ける・汁物は具を多めに汁を少なめにする等の工夫を入れる\n' : ''}${outList().length ? '【今、家にない食材（使わない）】' + outList().join('、') + '\n' : ''}【方針】平日の調理時間:${p.time || '30分'} / 大事にしたいこと:${(p.focus || ['節約']).join('・')}${p.notes ? '\nメモ:' + p.notes : ''}`;
+  return `【家族】${servingsLabel()}\n${lines}\n${kidT.length ? '【子どもの夕食1食の目安】' + kidT.join(' / ') + '。子どもの塩分目安を超えないよう、味を濃くする前に取り分ける・汁物は具を多めに汁を少なめにする等の工夫を入れる\n' : ''}${S.fridge.length ? '【冷蔵庫にあるもの（できるだけ使う。★は早めに使う）】' + S.fridge.map(f => (f.soon ? '★' : '') + f.n + (f.q ? ' ' + f.q : '')).join('、') + '\n' : ''}【方針】平日の調理時間:${p.time || '30分'} / 大事にしたいこと:${(p.focus || ['節約']).join('・')}${p.notes ? '\nメモ:' + p.notes : ''}`;
 }
 function eventsText(dates) {
   const ls = dates.map(d => { const it = evItems(d); return it.length ? `- ${d}(${dowOf(d)}): ${it.map(e => (memberName(e.who) || '家族') + '「' + e.kind + (e.memo ? '・' + e.memo : '') + '」').join('、')}` : null; }).filter(Boolean);
@@ -1626,7 +1649,7 @@ function reqBlock(req) {
   return req ? `【最優先：家族からの要望】${req}
 要望の中で「ない」「切らしている」「使えない」「使わない」「苦手」とされた食材は、残り物の指定やほかのどの条件よりも優先して、材料・料理名のどこにも絶対に使わない（別の食材で代える）。そうした食材名をavoidに書き出す（なければ空配列）。` : '';
 }
-const AVOID_VAR = { 豆腐: ['豆腐', 'とうふ', 'トウフ'], 卵: ['卵', 'たまご', '玉子', 'タマゴ', 'エッグ'], たまご: ['卵', 'たまご', '玉子'], 玉ねぎ: ['玉ねぎ', 'たまねぎ', '玉葱', 'タマネギ', 'オニオン'], ねぎ: ['ねぎ', 'ネギ', '葱'], 牛乳: ['牛乳', 'ミルク'], 鶏肉: ['鶏', 'チキン'], 豚肉: ['豚', 'ポーク'], 牛肉: ['牛', 'ビーフ'] };
+const AVOID_VAR = { にんじん: ['にんじん', '人参', 'ニンジン'], じゃがいも: ['じゃがいも', 'ジャガイモ', '馬鈴薯'], ほうれん草: ['ほうれん草', 'ほうれんそう'], 豆腐: ['豆腐', 'とうふ', 'トウフ'], 卵: ['卵', 'たまご', '玉子', 'タマゴ', 'エッグ'], たまご: ['卵', 'たまご', '玉子'], 玉ねぎ: ['玉ねぎ', 'たまねぎ', '玉葱', 'タマネギ', 'オニオン'], ねぎ: ['ねぎ', 'ネギ', '葱'], 牛乳: ['牛乳', 'ミルク'], 鶏肉: ['鶏', 'チキン'], 豚肉: ['豚', 'ポーク'], 牛肉: ['牛', 'ビーフ'] };
 function avoidHits(dishes, avoid) {
   const text = (dishes || []).map(x => (x?.name || '') + ' ' + (x?.ing || []).map(i => i?.n || '').join(' ')).join(' ');
   return avoid.filter(w => (AVOID_VAR[w] || [w]).some(v => v && text.includes(v)));
@@ -1970,13 +1993,12 @@ function sheetIngMiss(i, k) {
   <p class="hint">${esc(x.name)}の材料です。</p>
   <form id="im-form" style="display:grid;gap:12px">
     <label class="f">代わりに使いたいもの（任意）<input class="inp" id="im-sub" name="sub" placeholder="例：ピーマン／冷蔵庫にあるもので"></label>
-    <div class="opt"><input type="checkbox" name="remember" id="im-rem" value="1" checked><label for="im-rem">冷蔵庫にないものとして覚えておく</label></div>
-    <p class="hint">覚えておくと、ほかの日の献立をAIで作るときにも使いません。買い物リストでチェックすると自動で外れます。</p>
+    ${inFridge(ing.n) ? `<div class="opt"><input type="checkbox" name="remember" id="im-rem" value="1" checked><label for="im-rem">冷蔵庫の一覧から「${esc(inFridge(ing.n).n)}」を外す</label></div>` : ''}
     <button class="btn block" type="submit" ${S.sample ? '' : 'disabled'}>${ICON.spark}AIで代わりの材料に変える</button>
     <button class="btn ghost block" type="button" data-act="ing-drop" data-i="${i}" data-k="${k}">この材料を外すだけ</button>
   </form>`, el => el.querySelector('form').addEventListener('submit', e => {
     e.preventDefault(); const f = new FormData(e.target);
-    if (f.get('remember')) addOut(ing.n);
+    if (f.get('remember')) removeFridge(inFridge(ing.n)?.id);
     closeSheet(); replaceIng(date, i, k, String(f.get('sub') || '').trim());
   }));
 }
@@ -2019,11 +2041,148 @@ function sheetOuts() {
   }));
 }
 
+/* ---------- 冷蔵庫 ---------- */
+function saveFridge() { render(); return put('fridge/main', { items: S.fridge, updatedAt: Date.now() }); }
+function addFridge(list, replace) {
+  const now = Date.now();
+  const items = replace ? [] : [...S.fridge];
+  list.forEach(x => {
+    const n = coreName(x.n); if (!n) return;
+    const ex = items.find(f => coreName(f.n) === n);
+    if (ex) { if (x.q) ex.q = x.q; if (x.soon) ex.soon = true; ex.at = now; }
+    else items.push({ id: uid(), n, q: String(x.q || ''), c: CATS.includes(x.c) ? x.c : guessCat(n), soon: !!x.soon, src: x.src || 'manual', at: now });
+  });
+  S.fridge = items; return saveFridge();
+}
+function removeFridge(id) { if (!id) return; S.fridge = S.fridge.filter(f => f.id !== id); saveFridge(); }
+function viewFridge() {
+  let h = `<div class="card lunch-card"><h3>写真で登録</h3>
+    <p class="hint">棚ごと・ドアポケット・野菜室を開けた状態など、何枚かに分けて撮るとよく読み取れます。読み取った結果は保存前に直せます。</p>
+    <button class="btn" data-act="fr-photo">${ICON.camera}冷蔵庫の写真を撮る</button>
+    <button class="btn ghost" data-act="fridge-cook" ${S.fridge.length && S.sample ? '' : 'disabled'}>${ICON.spark}冷蔵庫のもので献立をつくる</button></div>
+  <form class="card lunch-card" id="fr-add"><h3>手で追加</h3>
+    <p class="hint">写真でわかりにくいもの（保存容器の中身、奥のもの、冷凍庫など）はここから入れてください。</p>
+    <div class="addrow"><label class="f">食材<input class="inp" id="fr-n" name="n" placeholder="例：カレーの残り" required></label><label class="f">量<input class="inp" id="fr-q" name="q" placeholder="2人分"></label></div>
+    <div class="opt"><input type="checkbox" name="soon" id="fr-soon" value="1"><label for="fr-soon">早めに使う</label></div>
+    <button class="btn" type="submit">追加</button></form>`;
+  if (!S.fridge.length) return h + `<div class="card empty"><h3>冷蔵庫はまだ空です</h3><p>写真を撮るか手で追加すると、ここに一覧で出ます。AIで献立を作るときは、ここにある食材を優先して使います。</p></div>`;
+  const soon = S.fridge.filter(f => f.soon).length;
+  h += `<div class="sec-title"><span>今ある食材 ${S.fridge.length}品${soon ? `（早めに使う ${soon}品）` : ''}</span><button class="btn small ghost" data-act="fr-clear">全部消す</button></div><div class="card" style="padding:4px 16px">`;
+  CATS.forEach(cat => {
+    const items = S.fridge.filter(f => (CATS.includes(f.c) ? f.c : 'その他') === cat).sort((a, b) => (b.soon - a.soon)); if (!items.length) return;
+    h += `<div class="shop-group" style="padding:0"><h4>${cat}</h4>${items.map(f => `<div class="fr-row"><button type="button" class="nm" data-act="fr-edit" data-id="${f.id}">${esc(f.n)}<small>${f.src === 'photo' ? '写真から' : f.src === 'shop' ? '買い物から' : '手入力'}・タップで編集</small></button>
+      <span class="q">${esc(f.q || '')}</span><button type="button" class="soon" data-act="fr-soon" data-id="${f.id}" aria-pressed="${!!f.soon}">早めに</button><button class="x" data-act="fr-del" data-id="${f.id}" aria-label="${esc(f.n)}を消す">×</button></div>`).join('')}</div>`;
+  });
+  return h + `</div><p class="hint">買い物リストでチェックしたものは自動で追加されます。献立を作ったら「作った」で使った食材を外せます。</p>`;
+}
+function sheetFridgeEdit(id) {
+  const f = S.fridge.find(x => x.id === id); if (!f) return;
+  openSheet(`<h3>${esc(f.n)}</h3><form id="fe-form" style="display:grid;gap:12px">
+    <div class="addrow"><label class="f">食材<input class="inp" id="fe-n" name="n" value="${esc(f.n)}" required></label><label class="f">量<input class="inp" id="fe-q" name="q" value="${esc(f.q || '')}"></label></div>
+    <div><span class="hint">分類</span><div class="opt" style="margin-top:6px">${CATS.map((c, i) => `<input type="radio" name="c" id="fec-${i}" value="${c}" ${f.c === c ? 'checked' : ''}><label for="fec-${i}">${c}</label>`).join('')}</div></div>
+    <div class="opt"><input type="checkbox" name="soon" id="fe-soon" value="1" ${f.soon ? 'checked' : ''}><label for="fe-soon">早めに使う</label></div>
+    <button class="btn block" type="submit">保存</button></form>`, el => el.querySelector('form').addEventListener('submit', e => {
+    e.preventDefault(); const d = new FormData(e.target);
+    Object.assign(f, { n: coreName(d.get('n')) || f.n, q: String(d.get('q') || '').trim(), c: d.get('c') || f.c, soon: !!d.get('soon') });
+    closeSheet(); saveFridge();
+  }));
+}
+const FR = { files: [], rows: null, unclear: [], busy: false };
+function sheetFridgePhoto() {
+  FR.files = []; FR.rows = null; FR.unclear = [];
+  openSheet(`<h3>冷蔵庫の写真を読み込む</h3>
+  <form id="fp-form" style="display:grid;gap:14px">
+    <label class="drop" for="fp-file">${ICON.camera}<span>写真を撮る・選ぶ</span><span class="hint">棚・ドアポケット・野菜室などを何枚かまとめて選べます</span>
+      <input type="file" id="fp-file" accept="image/*" multiple></label>
+    <div class="files" id="fp-files"></div>
+    <button class="btn block" type="submit" id="fp-go" disabled>${ICON.spark}AIで食材を読み取る</button>
+    <ul class="plain prog" id="fp-prog" hidden></ul>
+  </form>`, el => {
+    const inp = el.querySelector('#fp-file');
+    inp.addEventListener('change', () => { FR.files = [...FR.files, ...inp.files]; inp.value = ''; el.querySelector('#fp-files').innerHTML = FR.files.map(f => `<img alt="" src="${URL.createObjectURL(f)}">`).join(''); el.querySelector('#fp-go').disabled = !FR.files.length || !S.sample; });
+    el.querySelector('form').addEventListener('submit', e => { e.preventDefault(); readFridge(); });
+  });
+}
+async function readFridge() {
+  if (FR.busy || !FR.files.length || !S.sample) return;
+  FR.busy = true;
+  const prog = document.getElementById('fp-prog'), go = document.getElementById('fp-go'); if (go) go.disabled = true;
+  const step = (a, b) => { if (prog) { prog.hidden = false; prog.innerHTML = `<li><span class="dot ${a}"></span><span>写真を準備</span></li><li><span class="dot ${b}"></span><span>AIが食材を見分ける</span></li>`; } };
+  step('run', '');
+  try {
+    const images = await prepareImages(FR.files);
+    step('ok', 'run');
+    const r = await S.sample.json(`画像は家庭の冷蔵庫（野菜室・ドアポケット・冷凍庫を含むことがある）の写真です。写っている食材を見分けて一覧にしてください。
+- n は食材名（「鶏もも肉」「にんじん」「牛乳」「卵」など。ラベルが読めれば具体的に）。q は見た目でわかるおおまかな量（「2本」「半分くらい」「1パック」など）。c は分類。
+- 調味料（しょうゆ・マヨネーズ・ケチャップなど）は、c を「調味料」にして入れる。飲み物は牛乳・ジュース類だけ入れ、お茶や水は入れない。
+- conf は見分けの自信（high か low）。似たものと迷うとき、一部しか見えないときは low。
+- 中身が見えない保存容器や、何かわからないものは items に入れず unclear に短く書く（例：「黄色いふたの保存容器の中身」）。推測で食材名を作らない。
+- soon は、傷みかけ・使いかけ・賞味期限が近いと見えるものだけ true。
+${JSON_RULES.replace('ご飯（白米）は献立に含めない。', '')}
+JSONのみ: {"items":[{"n":"にんじん","q":"2本","c":"野菜・果物","conf":"high","soon":false}],"unclear":["…"]}`, { images, modelTier: 'default' });
+    const rows = (Array.isArray(r?.items) ? r.items : []).filter(x => x?.n).map(x => ({ n: coreName(x.n), q: String(x.q || ''), c: CATS.includes(x.c) ? x.c : guessCat(String(x.n)), low: x.conf === 'low', soon: !!x.soon, on: true }));
+    if (!rows.length) throw { code: 'empty' };
+    FR.rows = rows; FR.unclear = (Array.isArray(r?.unclear) ? r.unclear : []).map(String).slice(0, 10);
+    FR.busy = false; renderFridgeReview();
+  } catch (e) {
+    FR.busy = false; step('ng', 'ng'); if (go) go.disabled = false;
+    toast(e?.code === 'empty' ? '食材が見つかりませんでした。明るい場所で、棚ごとに近づいて撮り直してください'
+      : e?.code === 'no_images' ? 'この画面では写真を読み取れません。claude.aiのアプリかブラウザで開いてください'
+      : e?.code ? aiError(e) : '写真を読み込めませんでした。別の写真でお試しください');
+  }
+}
+function renderFridgeReview() {
+  openSheet(`<h3>見つかった食材（${FR.rows.length}品）</h3>
+  <p class="hint">違うものは直し、いらないものはチェックを外してください。オレンジの枠はAIが自信のないものです。</p>
+  <form id="fr-save" style="display:grid;gap:8px">
+    ${FR.rows.map((x, i) => `<div class="prow${x.low ? ' low' : ''}"><input type="checkbox" name="on${i}" id="fro-${i}" ${x.on ? 'checked' : ''} aria-label="${esc(x.n)}を登録する"><input class="inp" id="frn-${i}" name="n${i}" value="${esc(x.n)}" aria-label="食材名"><input class="inp" id="frq-${i}" name="q${i}" value="${esc(x.q)}" aria-label="量"></div>`).join('')}
+    ${FR.unclear.length ? `<div class="banner"><p><b>写真ではわからなかったもの</b><br>${FR.unclear.map(esc).join('<br>')}</p><p>中身がわかれば、保存したあと「手で追加」から入れてください。</p></div>` : ''}
+    <div class="opt" style="margin-top:6px"><input type="radio" name="mode" id="frm-add" value="add" checked><label for="frm-add">今の一覧に足す</label><input type="radio" name="mode" id="frm-rep" value="replace"><label for="frm-rep">一覧を入れ替える</label></div>
+    <button class="btn block" type="submit">保存</button>
+  </form>`, el => el.querySelector('form').addEventListener('submit', e => {
+    e.preventDefault(); const f = new FormData(e.target);
+    const list = FR.rows.map((x, i) => ({ ...x, n: String(f.get('n' + i) || '').trim(), q: String(f.get('q' + i) || '').trim(), on: !!f.get('on' + i), src: 'photo' })).filter(x => x.on && x.n);
+    const replace = f.get('mode') === 'replace';
+    closeSheet(); addFridge(list, replace).then(ok => ok !== false && toast(`${list.length}品を冷蔵庫に${replace ? '登録し直しました' : '追加しました'}`));
+    FR.rows = null; FR.files = [];
+  }));
+}
+function sheetFridgeCook() {
+  if (!S.fridge.length) { toast('先に冷蔵庫の中身を登録してください'); S.tab = 'fridge'; render(); return; }
+  openSheet(`<h3>冷蔵庫のもので献立をつくる</h3>
+  <p class="hint">冷蔵庫にある${S.fridge.length}品を中心に、買い足しが少なくなるように作ります。「早めに使う」ものを優先します。</p>
+  <form id="fc-form" style="display:grid;gap:12px">
+    <div class="opt"><input type="radio" name="span" id="fc-1" value="1" checked><label for="fc-1">今日の夕ごはん</label><input type="radio" name="span" id="fc-3" value="3"><label for="fc-3">今日から3日分</label></div>
+    <label class="f">要望（任意）<input class="inp" id="fc-req" name="req" placeholder="例：買い物に行かずに作りたい"></label>
+    <p class="hint">すでに入っている献立は上書きされます。</p>
+    <button class="btn block" type="submit" ${S.sample ? '' : 'disabled'}>${ICON.spark}つくる</button>
+  </form>`, el => el.querySelector('form').addEventListener('submit', async e => {
+    e.preventDefault(); const f = new FormData(e.target); closeSheet();
+    const req = '冷蔵庫にある食材を中心に使い、買い足しはできるだけ少なくする。早めに使う印のものを優先。' + String(f.get('req') || '').trim();
+    if (f.get('span') === '1') { const keep = S.day; S.day = TODAY; regenDay(req); S.day = keep; return; }
+    const dates = [0, 1, 2].map(i => addDays(TODAY, i));
+    toast('AIが3日分の献立を考えています…');
+    try { const { ok, failed } = await genDays(dates, req, () => {}); toast(failed ? `${ok}日分できました。${failed}日分は作れませんでした` : '冷蔵庫のもので3日分の献立を作りました'); }
+    catch (err) { toast(aiError(err)); }
+  }));
+}
+function sheetCooked(date) {
+  const day = S.days[date]; if (!day) return;
+  const used = S.fridge.filter(f => f.c !== '調味料' && (day.dishes || []).some(x => (x.ing || []).some(i => sameFood(i.n, f.n))));
+  if (!used.length) { toast('この献立で使う食材は冷蔵庫の一覧にありません'); return; }
+  openSheet(`<h3>使い切った食材を外す</h3><p class="hint">${md(date)}の献立で使う食材です。まだ残っているものはチェックを外してください。</p>
+  <form id="ck-form" style="display:grid;gap:8px">${used.map(f => `<div class="opt"><input type="checkbox" name="u" id="ck-${f.id}" value="${f.id}" checked><label for="ck-${f.id}">${esc(f.n)}${f.q ? '（' + esc(f.q) + '）' : ''}</label></div>`).join('')}
+  <button class="btn block" type="submit">冷蔵庫から外す</button></form>`, el => el.querySelector('form').addEventListener('submit', e => {
+    e.preventDefault(); const ids = new FormData(e.target).getAll('u');
+    S.fridge = S.fridge.filter(f => !ids.includes(f.id)); closeSheet(); saveFridge(); toast(`${ids.length}品を冷蔵庫から外しました`);
+  }));
+}
+
 /* ---------- events ---------- */
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-act]'); if (!t) return;
   const a = t.dataset.act;
-  if (a === 'sheet-bg') { if (e.target === t && !S.gen && !IMP.busy && !EO.busy) closeSheet(); return; }
+  if (a === 'sheet-bg') { if (e.target === t && !S.gen && !IMP.busy && !EO.busy && !FR.busy) closeSheet(); return; }
   if (a === 'check') return;
   switch (a) {
     case 'tab': closeSheet(); S.tab = t.dataset.tab; S.day = null; try { localStorage.setItem('kondate.tab', S.tab); } catch (err) {} render(); window.scrollTo(0, 0); break;
@@ -2063,8 +2222,16 @@ document.addEventListener('click', e => {
     case 'swap-day': sheetSwapDay(t.dataset.date); break;
     case 'swap-day-ok': swapDays(t.dataset.a, t.dataset.b); break;
     case 'ing-miss': sheetIngMiss(+t.dataset.i, +t.dataset.k); break;
-    case 'ing-drop': { const doc = JSON.parse(JSON.stringify(S.days[S.day])); const x = doc.dishes[+t.dataset.i]; const n = x.ing[+t.dataset.k]?.n; x.ing.splice(+t.dataset.k, 1); delete doc.nutri; if (document.getElementById('im-rem')?.checked && n) addOut(n); closeSheet(); saveDay(S.day, doc); toast(`「${n}」を外しました`); break; }
+    case 'ing-drop': { const doc = JSON.parse(JSON.stringify(S.days[S.day])); const x = doc.dishes[+t.dataset.i]; const n = x.ing[+t.dataset.k]?.n; x.ing.splice(+t.dataset.k, 1); delete doc.nutri; if (document.getElementById('im-rem')?.checked && n) removeFridge(inFridge(n)?.id); closeSheet(); saveDay(S.day, doc); toast(`「${n}」を外しました`); break; }
     case 'outs-open': sheetOuts(); break;
+    case 'fr-photo': sheetFridgePhoto(); break;
+    case 'fr-edit': sheetFridgeEdit(t.dataset.id); break;
+    case 'fr-soon': { const f = S.fridge.find(x => x.id === t.dataset.id); if (f) { f.soon = !f.soon; saveFridge(); } break; }
+    case 'fr-del': removeFridge(t.dataset.id); break;
+    case 'fr-clear': openSheet(`<h3>冷蔵庫の一覧を全部消しますか？</h3><button class="btn danger block" data-act="fr-clear-ok">全部消す</button><button class="btn ghost block" data-act="sheet-close">やめる</button>`); break;
+    case 'fr-clear-ok': S.fridge = []; closeSheet(); saveFridge(); break;
+    case 'fridge-cook': sheetFridgeCook(); break;
+    case 'cooked': sheetCooked(t.dataset.date); break;
     case 'out-del': removeOut(t.dataset.n); sheetOuts(); break;
     case 'lunch-fix': fixLunchConflicts(); break;
     case 'nutri-calc': calcNutri([S.day]); break;
@@ -2084,9 +2251,16 @@ document.addEventListener('change', e => {
   const t = e.target; if (t.dataset?.act !== 'check') return;
   const c = { ...(S.checks[S.week] || {}) }; if (t.checked) c[t.dataset.name] = true; else delete c[t.dataset.name];
   S.checks[S.week] = c; saveChecks();
-  if (t.checked && outList().some(o => t.dataset.name.includes(o))) { outList().filter(o => t.dataset.name.includes(o)).forEach(removeOut); toast(`「${t.dataset.name}」を冷蔵庫にないものから外しました`); }
+  const item = shoppingList().find(i => i.name === t.dataset.name);
+  if (t.checked && item && item.cat !== '調味料' && !inFridge(item.name)) addFridge([{ n: item.name, q: item.qty, c: item.cat, src: 'shop' }]);
+  if (!t.checked) { const f = S.fridge.find(x => x.src === 'shop' && x.n === t.dataset.name); if (f) removeFridge(f.id); }
 });
 document.addEventListener('submit', e => {
+  if (e.target.id === 'fr-add') {
+    e.preventDefault(); const f = new FormData(e.target); const n = String(f.get('n') || '').trim(); if (!n) return;
+    addFridge([{ n, q: String(f.get('q') || '').trim(), soon: !!f.get('soon'), src: 'manual' }]).then(ok => ok !== false && toast(`「${n}」を追加しました`));
+    return;
+  }
   if (e.target.id !== 'prefs') return;
   e.preventDefault(); const f = new FormData(e.target);
   S.family.prefs = { time: f.get('time'), focus: f.getAll('focus'), notes: String(f.get('notes') || '').trim() };
